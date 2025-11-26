@@ -28,7 +28,7 @@ Abbreviations
 gantt
     section MD1
     SD1 - Git hooks scripts              :done,md1des1, 2025-11-24,2d
-    SD2 - Update the repo itself with deck              :md1des2, after md1des1,1d
+    SD2 - Update the repo itself with deck              :done,md1des2, after md1des1,1d
 
     section MD2
     SD1 - Fix issues - Links                     :md2des1, 2025-11-30,1d
@@ -51,7 +51,7 @@ A Deck file is created for the progect
 - [x] 1. Add git hooks' scripts
 - [x] 2. Updated Deck path
 - [x] 3. Add a deck file to the repo
-- [] 4. Update time plan
+- [x] 4. Update time plan
 
 ### Reports :
 * 
