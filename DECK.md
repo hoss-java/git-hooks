@@ -39,7 +39,7 @@ gantt
 
 ```
 # Card template
-> ## <week-number>-<card-number>
+> ## `<week-number>-<card-number>`
 > ### Goal : <card-title/commit message>
 > Explain final goal for this card
 > 
@@ -68,10 +68,10 @@ Explain final goal for this card
 ### DOD  (definition of done):
 What will happen after finishing this card
 
-#### TODO :
+### TODO :
 - [] 1.
 
-# Reports :
+### Reports :
 * 
 
 #### Steps to test and debugging:
