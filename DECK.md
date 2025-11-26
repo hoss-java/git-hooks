@@ -25,7 +25,7 @@ Abbreviations
 
 ## Part 1 timeplan
 
-```mermaidgraph
+```mermaid
 gantt
     section MD1
     SD1 - Create containers              :md1des1, 2025-11-24,2d
@@ -39,7 +39,7 @@ gantt
 
 ```
 # Card template
-> ## <week-number>->card-number>
+> ## <week-number>-<card-number>
 > ### Goal : <card-title/commit message>
 > Explain final goal for this card
 > 
@@ -50,8 +50,8 @@ gantt
 > - [] 1.
 > 
 > ### Reports :
+> * 
 > 
-> ---
 > ### Steps to test and debugging:
 > - [] 1.
 > 
@@ -59,7 +59,9 @@ gantt
 > * []()
 
 # Stories/cards MD1
+
 ## 48-001
+
 ### Goal : <card-title/commit message>
 Explain final goal for this card
 
@@ -70,6 +72,7 @@ What will happen after finishing this card
 - [] 1.
 
 # Reports :
+* 
 
 #### Steps to test and debugging:
 - [] 1.
