@@ -30,7 +30,7 @@ As an example to understand how it works, assume the link to the Markdown file i
 >```
 
 ## How to install and activating git hooks
-This repository contains 6 files and a readme
+This repository contains 6 files and a readme and a DECK sample file
 > * `commit-msg`
 > * `commit-msg-decklink.shinc`
 > * `commit-msg-format.shinc`
@@ -73,3 +73,4 @@ This repository contains 6 files and a readme
 >>.
 >>.
 >>```
+6 . Use `DECK.md.sample` as a sample for `DECK.md`
