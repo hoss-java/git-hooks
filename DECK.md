@@ -87,3 +87,25 @@ Links created by git hook scripts work
 
 ### References :
 * []()
+---
+
+## 48-004
+
+### Goal : 
+The goal of this card is to update README.
+
+### DOD  (definition of done):
+README is updated.
+
+### TODO :
+- [x] 1. README is updated with a linke to this file DECK
+
+### Reports :
+*
+
+### Steps to test and debugging:
+- [] 1.
+
+### References :
+* []()
+---
