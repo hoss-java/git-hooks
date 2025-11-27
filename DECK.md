@@ -43,7 +43,10 @@ gantt
 # Stories/cards MD1 - Develop
 
 ## 48-002
->### Goal : Add hooks
+### Add hooks ![status](https://img.shields.io/badge/status-DONE-brightgreen)
+<details>
+    <summary>Details</summary>
+
 >The goal of this card is to update the local repo itself with hooks.
 >It also aims to add a deck file to the repo
 >
@@ -65,12 +68,15 @@ gantt
 >
 >### References :
 >* []()
----
+</details>
 
 # Stories/cards MD1 - Maintenance
 
 ## 48-003
->### Goal : Fix links issues
+### Fix links issues ![status](https://img.shields.io/badge/status-DONE-brightgreen)
+<details>
+    <summary>Details</summary>
+
 >It seems the link created by hooks does not work. The goal of this card is to find the problem and fix it.
 >
 >### DOD  (definition of done):
@@ -90,10 +96,13 @@ gantt
 >
 >### References :
 >* []()
----
+</details>
 
 ## 48-004
->### Goal : update README
+### update README ![status](https://img.shields.io/badge/status-DONE-brightgreen)
+<details>
+    <summary>Details</summary>
+
 >The goal of this card is to update README.
 >
 >### DOD  (definition of done):
@@ -110,4 +119,27 @@ gantt
 >
 >### References :
 >* []()
----
+</details>
+
+## 48-005
+### Goal : update README ![status](https://img.shields.io/badge/status-DONE-brightgreen)
+<details>
+    <summary>Details</summary>
+
+>>The goal of this card is to update README.
+>>
+>>### DOD  (definition of done):
+>>README is updated.
+>>
+>>### TODO :
+>>- [x] 1. README is updated with a linke to this file DECK
+>>
+>>### Reports :
+>>*
+>>
+>>### Steps to test and debugging:
+>>- [] 1.
+>>
+>>### References :
+>>* []()
+</details>
