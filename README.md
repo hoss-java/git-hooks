@@ -1,7 +1,7 @@
 # Git hooks
 A set of git hook scripts to make commits more structured
 
-Deck board -> https://github.com/hoss-java/gitthooks/blob/main/DECK.md
+**Deck board** -> https://github.com/hoss-java/gitthooks/blob/main/DECK.md
 
 ## What git-hooks are
 Git-hooks are a set of scripts that check commit messages to be sure they follow a structure that can be tracked via a document file.
