@@ -13,9 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Bash
-        shell: bash
-
       - name: Run Script
         run: |
           chmod +x .github/gh_generate_markdown.sh
