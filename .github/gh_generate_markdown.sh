@@ -1,7 +1,8 @@
 #!/bin/bash
 
-base_path=".pm/deck"
-output_file="DECK.md"
+GIT_ROOT="$(git rev-parse --show-toplevel)"
+base_path="$GIT_ROOT/.pm/deck"
+output_file="$GIT_ROOT/DECK.md"  # Change output file to DECK.md in root
 
 # Clear the output file if it exists
 > "$output_file"
