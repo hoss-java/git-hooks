@@ -32,7 +32,6 @@ jobs:
           git add DECK.md
           git commit -m "Update DECK.md"
 
-          git commit -m "chore: update production bundle (auto-pushed by GitHub Actions)"  
           # Push to master using the PAT for authentication  
           git push https://${PAT}@github.com/${REPO}.git master  
           else  
