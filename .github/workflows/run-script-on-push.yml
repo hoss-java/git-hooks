@@ -32,5 +32,5 @@ jobs:
           git commit -m "Add myfile.txt created by GitHub Actions"
           git push origin main # Change to the branch you want to push to
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
 
