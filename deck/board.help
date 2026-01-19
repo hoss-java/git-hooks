@@ -1,5 +1,4 @@
-Board Management Commands Usage
-===============================
+# Git-Deck Board Management Commands Usage
 
 The following commands are available for managing boards:
 
@@ -51,12 +50,3 @@ The following commands are available for managing boards:
      ```
      git deck board cleanup
      ```
-
-Error Responses
----------------
-- `Error: No board name provided.`: When a command requires a board name but none is provided.
-- `Error: A board with the name '<name>' already exists.`: When trying to create a board with an existing name.
-- `Error: Board '<name>' does not exist.`: When attempting to manipulate a non-existent board.
-- `Error: Maximum number of boards (1000) reached.`: When attempting to create more boards than allowed.
-
-For further assistance, please refer to the project documentation or contact the development team.

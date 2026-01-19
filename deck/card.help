@@ -1,4 +1,4 @@
-Card Management Commands Usage
+# Git-Deck Card Management Commands Usage
 ===============================
 
 The following commands are available for managing cards within a selected column:
@@ -72,12 +72,3 @@ The following commands are available for managing cards within a selected column
      ```
      git deck card cleanup
      ```
-
-Error Responses
----------------
-- `Error: No column selected.`: Triggered when attempting to create a card without an active column.
-- `Error: No card title provided.`: Triggered when a command requiring a card title is executed without one.
-- `Error: No card with id '<id>' found for column '<column>'`: Triggered when trying to manipulate a non-existent card.
-- `Error: Maximum number of cards (10000) reached.`: Triggered when trying to exceed the allowed number of cards.
-
-For further assistance, please refer to the project documentation or contact the development team.

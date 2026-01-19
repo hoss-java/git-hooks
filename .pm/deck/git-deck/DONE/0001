@@ -1,5 +1,5 @@
 ---
-Title: fix github yaml issues
+Title: Fix github yaml issues
 Tags: git-deck
 ---
 
@@ -7,14 +7,9 @@ Tags: git-deck
 Github workflow YAML gets working.
 
 # TODO:
-- [] 1. Find out what is the issue
+- [x] 1. Find out what is the issue
 
 # Reports:
 * It seams the script is run but no output is crated!
 * It seems the problem is the way that github run a command
 * There is no accress to remote via virtual machin that github runs
-*
-
-
-
-

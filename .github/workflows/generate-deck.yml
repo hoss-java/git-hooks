@@ -19,7 +19,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Step 2: Setup bash
+      # Step 2: Set up Bash
       - name: Set up Bash
         shell: bash
         run: echo "Bash is set up" # This line ensures `run` is present
@@ -27,16 +27,16 @@ jobs:
       # Step 3: Run the script
       - name: Run Script
         run: |
-          chmod +x .github/gh_generate_markdown.sh
-          ./.github/gh_generate_markdown.sh
+          chmod +x .github/scripts/git-deck-md-generator.sh
+          ./.github/scripts/git-deck-md-generator.sh
 
-      # Step 3: Configure Git
+      # Step 4: Configure Git
       - name: Configure git
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-      # Step 4: Commit and push the changes
+      # Step 5: Commit and push changes
       - name: Commit changes
         run: |
           git add DECK.md

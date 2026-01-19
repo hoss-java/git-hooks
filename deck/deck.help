@@ -1,79 +1,57 @@
-# Git Deck Bash Autocompletion Help File
+# Git-Deck Kanban board manager
 
 ## Overview
-The `git deck` command provides a structured way to manage project boards, columns, and cards within a Git repository. This script enables autocompletion for various subcommands and options.
+The `pm` function manages project management features within a Git repository. It initializes a project management structure, allows for editing, and creates a deck of cards. This command supports various subcommands, including help, initialization, and management.
 
-## Commands
+## Function Usage
 
-### 1. Base Command: `git deck`
-This command supports the following first-level commands:
-- **pm**: Project management commands.
-- **board**: Manage project boards.
-- **column**: Manage columns within boards.
-- **card**: Manage cards within columns.
-- **help**: Display help information.
+### Command Format
+`git deck pm {help|initpm|editpm|initdeck|createdeck}`
 
----
 
-### 2. Project Management Commands (`git deck pm`)
-- **help**: Displays help for project management.
-- **initpm**: Initializes the project management setup.
-- **editpm**: Edits project management details.
-- **initdeck**: Initializes a new deck.
-- **createdeck**: Creates a new deck.
+### Subcommands
 
----
+#### 1. `help`
+Displays the content of the project management help file.
+- **Usage**: `git deck pm help`
 
-### 3. Board Commands (`git deck board`)
-- **help**: Displays help for boards.
-- **ls**: Lists existing boards.
-- **mk**: Creates a new board.
-- **rm**: Removes a board.
-- **set**: Configures settings for a specific board.
-- **cleanup**: Cleans up unused boards.
+#### 2. `initpm`
+Initializes the project management files and directories.
+- **Usage**: `git deck pm initpm`
+- **Options**:
+  - `-t <template>`: Specifies the template to use for initialization (default is 'default').
 
-**Autocompletion**:
-  - For `mk`, existing templates are suggested.
-  - For `rm`, existing boards and options like `--remove` are suggested.
+#### 3. `editpm`
+Edits the project management markdown file using a specified editor.
+- **Usage**: `git deck pm editpm`
+- **Options**:
+  - `-e <editor>`: Specifies the editor to use (default is `nano`).
 
----
+#### 4. `initdeck`
+Initializes the deck directory if it does not already exist.
+- **Usage**: `git deck pm initdeck`
 
-### 4. Column Commands (`git deck column`)
-- **help**: Displays help for columns.
-- **ls**: Lists existing columns.
-- **mk**: Creates a new column.
-- **set**: Configures specific column settings.
-- **status**: Checks status of a column.
-- **rm**: Removes a column.
-- **cleanup**: Cleans up unused columns.
-
-**Autocompletion**:
-  - For `set`, existing columns are suggested.
-  - For `rm`, existing columns and options like `--remove` are suggested.
+#### 5. `createdeck`
+Creates or updates the `DECK.md` file based on the existing cards and boards.
+- **Usage**: `git deck pm createdeck`
 
 ---
 
-### 5. Card Commands (`git deck card`)
-- **help**: Displays help for cards.
-- **ls**: Lists existing cards.
-- **find**: Searches for a specific card.
-- **mk**: Creates a new card.
-- **edit**: Edits an existing card.
-- **cat**: Displays details of a card.
-- **set**: Updates card properties.
-- **mv**: Moves a card to a different column.
-- **rm**: Removes a card.
-- **cleanup**: Cleans up unused cards.
+## Detailed Behavior
 
-**Autocompletion**:
-  - For `edit`, `cat`, and `set`, existing cards are suggested.
-  - For `rm`, existing cards and options like `--remove` are suggested.
-  - For `mv`, both existing cards and columns are suggested.
+### Initializing Project Management
+When `initpm` is called, the function checks if the `.pm` directory already exists. If it doesn't, it creates the directory and copies the specified template file into it. If it already exists, an informative message is printed.
+
+### Editing Project Management
+The `editpm` command opens the `pm.md` file in the specified editor (or default editor if not specified). If the file does not exist yet, an error message will be displayed.
+
+### Initializing Deck
+The `initdeck` command initializes the deck directory. If it already exists, a message indicating that it is already initialized will be shown.
+
+### Creating the Deck File
+The `createdeck` function compiles information from each board, column, and card into a `DECK.md` file formatted as Markdown. It extracts headers and other metadata from the cards, organizes them, and writes to the output file.
 
 ---
 
-## Installation
-To install, copy this script into your Bash configuration file (e.g., `.bashrc` or `.bash_profile`). Ensure the script is registered for autocompletion with:
-
-```bash
-complete -F _git\_deck\_completion git deck
+## Getting Help
+If at any point you need assistance, you can display this help file by running: `git deck pm help`

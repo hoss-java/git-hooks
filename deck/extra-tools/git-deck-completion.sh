@@ -249,7 +249,7 @@ _git_deck_completion() {
             return
         fi
 
-    
+
         # Autocompletion for 'set' command
         if [[ "${COMP_WORDS[3]}" == "mv" ]]; then
             # Get the Git root directory

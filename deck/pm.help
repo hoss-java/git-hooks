@@ -1,4 +1,4 @@
-# Git Deck Project Management Help File
+# Git-Deck Project Management Help File
 
 ## Overview
 The `pm` function manages project management features within a Git repository. It initializes a project management structure, allows for editing, and creates a deck of cards. The command supports various subcommands, including help, initialization, and management.

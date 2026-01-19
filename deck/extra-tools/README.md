@@ -1,0 +1,80 @@
+# Git-Deck Bash Autocompletion Help File
+
+## Overview
+The `git deck` command provides a structured way to manage project boards, columns, and cards within a Git repository. This script enables autocompletion for various subcommands and options.
+
+## Commands
+
+### 1. Base Command: `git deck`
+This command supports the following first-level commands:
+- **pm**: Project management commands.
+- **board**: Manage project boards.
+- **column**: Manage columns within boards.
+- **card**: Manage cards within columns.
+- **help**: Display help information.
+
+---
+
+### 2. Project Management Commands (`git deck pm`)
+- **help**: Displays help for project management.
+- **initpm**: Initializes the project management setup.
+- **editpm**: Edits project management details.
+- **initdeck**: Initializes a new deck.
+- **createdeck**: Creates a new deck.
+
+---
+
+### 3. Board Commands (`git deck board`)
+- **help**: Displays help for boards.
+- **ls**: Lists existing boards.
+- **mk**: Creates a new board.
+- **rm**: Removes a board.
+- **set**: Configures settings for a specific board.
+- **cleanup**: Cleans up unused boards.
+
+**Autocompletion**:
+  - For `mk`, existing templates are suggested.
+  - For `rm`, existing boards and options like `--remove` are suggested.
+
+---
+
+### 4. Column Commands (`git deck column`)
+- **help**: Displays help for columns.
+- **ls**: Lists existing columns.
+- **mk**: Creates a new column.
+- **set**: Configures specific column settings.
+- **status**: Checks status of a column.
+- **rm**: Removes a column.
+- **cleanup**: Cleans up unused columns.
+
+**Autocompletion**:
+  - For `set`, existing columns are suggested.
+  - For `rm`, existing columns and options like `--remove` are suggested.
+
+---
+
+### 5. Card Commands (`git deck card`)
+- **help**: Displays help for cards.
+- **ls**: Lists existing cards.
+- **find**: Searches for a specific card.
+- **mk**: Creates a new card.
+- **edit**: Edits an existing card.
+- **cat**: Displays details of a card.
+- **set**: Updates card properties.
+- **mv**: Moves a card to a different column.
+- **rm**: Removes a card.
+- **cleanup**: Cleans up unused cards.
+
+**Autocompletion**:
+  - For `edit`, `cat`, and `set`, existing cards are suggested.
+  - For `rm`, existing cards and options like `--remove` are suggested.
+  - For `mv`, both existing cards and columns are suggested.
+
+---
+
+## Installation
+To install, copy this script into your Bash configuration file (e.g., `.bashrc` or `.bash_profile`). Ensure the script is registered for autocompletion with:
+
+```bash
+source git-deck-completion.sh
+```

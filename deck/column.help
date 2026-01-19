@@ -1,5 +1,4 @@
-Column Management Commands Usage
-================================
+# Git-Deck Column Management Commands Usage
 
 The following commands are available for managing columns within a selected board:
 
@@ -48,13 +47,3 @@ The following commands are available for managing columns within a selected boar
      ```
      git deck column cleanup
      ```
-
-Error Responses
----------------
-- `Error: No board selected.`: Triggered when trying to list, create, or remove columns without an active board.
-- `Error: No column name provided.`: Triggered when a command requiring a column name is executed without one.
-- `Error: A column with the name '<name>' already exists.`: Triggered when trying to create a column that already exists.
-- `Error: Column '<name>' does not exist.`: Triggered when attempting to remove or set a non-existent column.
-- `Error: Maximum number of columns (10000) reached.`: Triggered when trying to exceed the allowed number of columns.
-
-For further assistance, please refer to the project documentation or contact the development team.
