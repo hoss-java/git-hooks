@@ -13,3 +13,4 @@ Github workflow YAML gets working.
 * It seams the script is run but no output is crated!
 * It seems the problem is the way that github run a command
 * There is no accress to remote via virtual machin that github runs
+*
