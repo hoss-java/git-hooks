@@ -4,7 +4,9 @@ pm() {
     # Get the Git root directory
     GIT_ROOT="$(git rev-parse --show-toplevel)"
     PM_HELP="$GIT_ROOT/.git/hooks/deck/pm.help"
-    DECK_DIR="$GIT_ROOT/.pm/deck"
+    TEMPLATES_DIR="$GIT_ROOT/.pm/templates"
+    PM_DIR="$GIT_ROOT/.pm"
+    DECK_DIR="$PM_DIR/deck"
 
     case "$1" in
         help)
@@ -15,17 +17,118 @@ pm() {
                 echo "Error: Help file init.help not found."
             fi
             ;;
-        initdeck)
-            initdeck "${@:2}"
+        initpm)
+            init_pm "${@:2}"
             ;;
-        updatedeck)
-            updatedeck "${@:2}"
+        editpm)
+            edit_pm "${@:2}"
+            ;;
+        initdeck)
+            init_deck "${@:2}"
+            ;;
+        createdeck)
+            create_deck "${@:2}"
+            ;;
+        *)
+            echo "Invalid card command. Usage: git deck pm {help|initpm|editpm|initdeck|createdeck}"
             ;;
     esac
 }
 
+# Initialize for for a git folder
+init_pm() {
+    return_value=1
+
+    # Default values for options
+    option_template='default'
+    # Parse options using getopts
+    while getopts ":t:-:" opt; do
+        case $opt in
+            o)
+                option_output="$OPTARG"
+                ;;
+            -)
+                case "${OPTARG}" in
+                    template)
+                        option_output="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                        ;;
+                    *)
+                        echo "Invalid option: --${OPTARG}" >&2
+                        return 1
+                        ;;
+                esac
+                ;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
+                return 1
+                ;;
+            :)
+                echo "Option -$OPTARG requires an argument." >&2
+                return 1
+                ;;
+        esac
+    done
+    if [ -d "$PM_DIR" ] && [ -f "$PM_DIR/pm.md" ] ; then
+        echo "PM is already initialized at $PM_DIR."
+    else
+        [ ! -d "$PM_DIR" ] && \
+            mkdir -p "$PM_DIR"
+
+        cp "$TEMPLATES_DIR/pm/$option_template" "$PM_DIR/pm.md"
+        return_value=$?
+        echo "Initialized PM at $PM_DIR."
+    fi
+    return $return_value
+}
+
+# init pm for a git folder
+edit_pm() {
+    return_value=1
+
+    # Default values for options
+    option_editor="nano"
+    # Parse options using getopts
+    while getopts ":e:-:" opt; do
+        case $opt in
+            e)
+                option_editor="$OPTARG"
+                ;;
+            -)
+                case "${OPTARG}" in
+                    editor)
+                        option_editor="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                        ;;
+                    *)
+                        echo "Invalid option: --${OPTARG}" >&2
+                        return 1
+                        ;;
+                esac
+                ;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
+                return 1
+                ;;
+            :)
+                echo "Option -$OPTARG requires an argument." >&2
+                return 1
+                ;;
+        esac
+    done
+    option_editor=$(echo "$option_editor" | tr '[:upper:]' '[:lower:]')
+
+    if [ -f "$PM_DIR/pm.md" ]; then
+        DEFAULT_EDITOR="$option_editor"
+        EDITOR=${EDITOR:-$DEFAULT_EDITOR}
+        $DEFAULT_EDITOR "$PM_DIR/pm.md"
+        return_value=$?
+    else
+        echo "Pm has not been initialized yet, '"$PM_DIR/pm.md"' was not found."
+    fi
+    return $return_value 
+}
+
 # Initialize deck for a git folder
-initdeck() {
+init_deck() {
     return_value=1
     if [ -d "$DECK_DIR" ]; then
         echo "Deck is already initialized at $DECK_DIR."
@@ -37,7 +140,125 @@ initdeck() {
     return $return_value
 }
 
-# 
-updatedeck() {
-    ;
+# Extract header
+extract_headers() {
+    local file="$1"
+    declare -A headers
+
+    header=$(awk '
+        BEGIN { in_header=0 }
+        /^---/ { 
+            in_header = 1 - in_header; 
+            if (in_header == 0) exit 
+            next
+        }
+        in_header && length($0) > 0 { print }
+    ' "$file")
+
+    while IFS= read -r line; do
+        if [[ ! -z "$line" ]]; then
+            key=$(echo "$line" | cut -d':' -f1 | xargs)
+            value=$(echo "$line" | cut -d':' -f2- | xargs)
+            if [[ -n "$key" ]]; then
+                headers["$key"]="$value"
+            fi
+        fi
+    done <<< "$header"
+
+    echo "$(declare -p headers)"
+}
+
+# Create/update DECK.md
+create_deck() {
+    return_value=1
+    # Get the root directory of the Git repository
+    GIT_ROOT="$(git rev-parse --show-toplevel)"
+    base_path="$GIT_ROOT/.pm/deck"
+    pm_file="$GIT_ROOT/.pm/pm.md"
+    output_file="$GIT_ROOT/DECK.md"
+
+    # Clear the output file if it exists
+    if [ -f "$pm_file" ]; then
+        cat "$pm_file" > "$output_file"
+    else
+        > "$output_file"
+    fi
+
+    # Loop through each board folder
+    for board_folder in "$base_path"/*; do
+        if [[ -d "$board_folder" ]]; then
+            # Read board ID from .id file
+            board_id=$(<"$board_folder/.id")
+            board_name=$(basename "$board_folder")
+
+            # Write the board header only once
+            echo "# $board_id - $board_name" >> "$output_file"
+
+            # Loop through each column folder
+            for column_folder in "$board_folder"/*; do
+                if [[ -d "$column_folder" ]]; then
+                    column_name=$(basename "$column_folder")
+
+                    # Loop through each card file in the column
+                    for card_file in "$column_folder"/*; do
+                        if [[ -f "$card_file" && $(basename "$card_file") =~ ^[0-9]{1,4}$ ]]; then
+                            headers_output=$(extract_headers "$card_file")
+                            eval "$headers_output"  # Evaluate to create the associative array
+
+                            # Get the title from headers, default to "Untitled" if not found
+                            card_title="${headers[Title]:-Untitled}"
+
+                            # Initialize card_content and check if headers_output is not empty
+                            card_content=""
+                            if [[ -n "$headers_output" ]]; then
+                                # Get the content after the second ---
+                                card_content=$(awk '
+                                    BEGIN { in_header=0; second_dash_found=0 }
+                                    /^---/ { 
+                                        if (in_header) { 
+                                            second_dash_found=1;  
+                                            in_header=0;  
+                                            next; 
+                                        }
+                                        in_header=1;  
+                                        next; 
+                                    }
+                                    second_dash_found { print }
+                                ' "$card_file")
+                            fi
+
+                            # Read the status file for statustext and statusdetails
+                            status_file="$column_folder/.status"
+                            if [[ -f "$status_file" ]]; then
+                                status_headers_output=$(extract_headers "$status_file")
+                                eval "$status_headers_output"  # Evaluate to create associative array
+                                # Extract values for statustext and statusdetails
+                                statustext="${headers[statustext]:-}"
+                                statusdetails="${headers[statusdetails]:-}"
+                            fi
+
+                            # Get the card ID from the filename
+                            card_id=$(basename "$card_file")
+                            board_id_fix=$(printf "%03d" "$board_id")
+
+                            # Write card details to the output markdown file
+                            {
+                                echo ""
+                                echo "## [B$board_id_fix-C$card_id] $card_title ${statustext:-$column_name}"
+                                echo "> <details ${statusdetails}>"
+                                echo ">     <summary>Details</summary>"
+
+                                # Indent each line of card_content with >
+                                while IFS= read -r line; do
+                                    echo "> $line"
+                                done <<< "$card_content"
+
+                                echo "> </details>"
+                            } >> "$output_file"
+                        fi
+                    done
+                fi
+            done
+        fi
+    done
 }

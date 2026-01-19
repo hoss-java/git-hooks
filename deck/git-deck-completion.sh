@@ -15,6 +15,16 @@ _git_deck_completion() {
     fi
 
     # Check if the first command is 'deck' and the second command is 'board'
+    if [[ "$command_name" == "deck" && "${COMP_WORDS[2]}" == "pm" ]]; then
+        if [[ "$COMP_CWORD" -eq 3 ]]; then
+            # Define second-level commands for "git deck board"
+            local pm_commands=("help" "initpm" "editpm" "initdeck" "createdeck")
+            COMPREPLY=($(compgen -W "${pm_commands[*]}" -- "$current_word"))
+            return
+        fi
+    fi
+
+    # Check if the first command is 'deck' and the second command is 'board'
     if [[ "$command_name" == "deck" && "${COMP_WORDS[2]}" == "board" ]]; then
         if [[ "$COMP_CWORD" -eq 3 ]]; then
             # Define second-level commands for "git deck board"
@@ -100,13 +110,30 @@ _git_deck_completion() {
     elif [[ "$command_name" == "deck" && "${COMP_WORDS[2]}" == "column" ]]; then
         if [[ "$COMP_CWORD" -eq 3 ]]; then
             # Define second-level commands for "git deck board"
-            local column_commands=("help" "ls" "mk" "set" "rm" "cleanup")
+            local column_commands=("help" "ls" "mk" "set" "status" "rm" "cleanup")
             COMPREPLY=($(compgen -W "${column_commands[*]}" -- "$current_word"))
             return
         fi
 
         # Autocompletion for 'set' command
-        if [[ "${COMP_WORDS[3]}" == "set" || "${COMP_WORDS[3]}" == "rm" ]]; then
+        if [[ "${COMP_WORDS[3]}" == "set" ]]; then
+            # Get the Git root directory
+            local git_root
+            git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+
+            # If we successfully obtained the git root, proceed
+            if [[ -d "${git_root}/.pm/deck" ]]; then
+                # List existing board directories in .pm/deck
+                local column_s
+                columns=$(git deck column ls --output name)
+
+                COMPREPLY=($(compgen -W "${columns}" -- "$current_word"))
+            fi
+            return
+        fi
+
+        # Autocompletion for 'set' command
+        if [[ "${COMP_WORDS[3]}" == "rm" ]]; then
             # Get the Git root directory
             local git_root
             git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
@@ -132,6 +159,33 @@ _git_deck_completion() {
                 # If we successfully obtained the git root, proceed
                 local column_option_params=("permanent" )
                 COMPREPLY=($(compgen -W "${column_option_params[*]}" -- "$current_word"))
+            fi
+
+            return
+        fi
+
+        # Autocompletion for 'set' command
+        if [[ "${COMP_WORDS[3]}" == "status" ]]; then
+            # Get the Git root directory
+            local git_root
+            git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+
+           if [[ "$COMP_CWORD" -eq 4 || ( "$COMP_CWORD" -ge 6 && "$((COMP_CWORD % 2))" -eq 0 ) ]]; then
+                # If we successfully obtained the git root, proceed
+                if [[ -d "${git_root}/.pm/deck" ]]; then
+                    # List existing board directories in .pm/deck
+                    local column_s
+                    columns=$(git deck column ls --output name)
+                    columns+=('open')
+
+                    COMPREPLY=($(compgen -W "${columns}" -- "$current_word"))
+                fi
+            fi
+
+            if [[ ( "$COMP_CWORD" -ge 5 && "$((COMP_CWORD % 2))" -ne 0) ]]; then
+                # If we successfully obtained the git root, proceed
+                local column_options=("--status-text" "--status-details")
+                COMPREPLY=($(compgen -W "${column_options[*]}" -- "$current_word"))
             fi
 
             return

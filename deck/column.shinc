@@ -50,6 +50,11 @@ column() {
             [ -n "$DEFAULT_BOARD_NAME" ] && \
                 set_column "${@:2}"
             ;;
+        status)
+            [ "$DEFAULT_BOARD" -gt -1 ] && \
+            [ -n "$DEFAULT_BOARD_NAME" ] && \
+                status_column "${@:2}"
+            ;;
         rm)
             [ "$DEFAULT_BOARD" -gt -1 ] && \
             [ -n "$DEFAULT_BOARD_NAME" ] && \
@@ -59,7 +64,7 @@ column() {
             cleanup "${@:2}"
             ;;
         *)
-            echo "Invalid column command. Usage: git deck column {help|ls|mk|set|rm|cleanup}"
+            echo "Invalid column command. Usage: git deck column {help|ls|mk|set|status|rm|cleanup}"
             ;;
     esac
 }
@@ -290,12 +295,88 @@ set_column() {
     COLUMN_NAME=$1
     COLUMN_DIR="$DECK_DIR/$DEFAULT_BOARD_NAME/$COLUMN_NAME"
 
-    # Check if the board directory exists
+    # Check if the column directory exists
     if [ -d "$COLUMN_DIR" ] && [ -f "$COLUMN_DIR/.id" ]; then
         COLUMN_ID=$(cat "$COLUMN_DIR/.id")
         echo "$COLUMN_ID" > "$DEFAULT_COLUMN_FILE"
         return_value=$?
         echo "Column '$DEFAULT_BOARD_NAME/$COLUMN_NAME' with ID '$COLUMN_ID' is now set as the active column."
+    fi
+    return $return_value
+}
+
+# Set a column as default for its board
+status_column() {
+    return_value=1
+
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    if [ -z "$1" ]; then
+        echo "Error: No column name provided to set as active."
+        return 1
+    fi
+
+    COLUMN_NAME=$1
+    shift 1 # Shift past the first two parameters
+
+    # Default values for options
+    option_status_text="$COLUMN_NAME"
+    option_status_details=''
+    # Parse options using getopts
+    while getopts ":t:b:-:" opt; do
+        case $opt in
+            t)
+                option_status_text="$OPTARG"
+                ;;
+            d)
+                option_status_details="$OPTARG"
+                ;;
+            -)
+                case "${OPTARG}" in
+                    status-text)
+                        option_status_text="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                        ;;
+                    status-details)
+                        option_status_details="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                        ;;
+                    *)
+                        echo "Invalid option: --${OPTARG}" >&2
+                        return 1
+                        ;;
+                esac
+                ;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
+                return 1
+                ;;
+            :)
+                echo "Option -$OPTARG requires an argument." >&2
+                return 1
+                ;;
+        esac
+    done
+    option_remove=$(echo "$option_remove" | tr '[:upper:]' '[:lower:]')
+
+    COLUMN_DIR="$DECK_DIR/$DEFAULT_BOARD_NAME/$COLUMN_NAME"
+
+    # Check if the column directory exists
+    COLUMN_STATUS="$COLUMN_DIR/.status"
+    if [ -d "$COLUMN_DIR" ]; then
+        [ -f "$COLUMN_DIR/.id" ] &&\
+            COLUMN_ID=$(cat "$COLUMN_DIR/.id")
+
+        > "$COLUMN_STATUS"
+        # Write card details to the output markdown file
+        {
+            echo "---"
+            echo "statustext=$option_status_text"
+            echo "statusdetails=$option_status_details"
+            echo "---"
+        } >> "$COLUMN_STATUS"
+        return_value=$?
+        echo "Column status for '$DEFAULT_BOARD_NAME/$COLUMN_NAME' with ID '$COLUMN_ID' was updated."
     fi
     return $return_value
 }
@@ -315,3 +396,4 @@ cleanup() {
     fi
     rerun $return_value
 }
+

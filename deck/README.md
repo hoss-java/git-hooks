@@ -1,43 +1,38 @@
-# Git Deck Project Management Help File
+# Git Deck Project Management
 
 ## Overview
-The `pm` function manages project management features within a Git repository. It initializes a project management structure, allows for editing, and creates a deck of cards. The command supports various subcommands, including help, initialization, and management.
+The `pm` function manages project management features within a Git repository. It initializes a project management structure, allows for editing, and creates a deck of cards. This command supports various subcommands, including help, initialization, and management.
 
 ## Function Usage
 
 ### Command Format
-git deck pm {help|initpm|editpm|initdeck|createdeck}
+`git deck pm {help|initpm|editpm|initdeck|createdeck}`
 
 
 ### Subcommands
 
-#### 1. help
+#### 1. `help`
 Displays the content of the project management help file.
-
 - **Usage**: `git deck pm help`
 
-#### 2. initpm
+#### 2. `initpm`
 Initializes the project management files and directories.
-
 - **Usage**: `git deck pm initpm`
 - **Options**:
   - `-t <template>`: Specifies the template to use for initialization (default is 'default').
 
-#### 3. editpm
+#### 3. `editpm`
 Edits the project management markdown file using a specified editor.
-
 - **Usage**: `git deck pm editpm`
 - **Options**:
   - `-e <editor>`: Specifies the editor to use (default is `nano`).
 
-#### 4. initdeck
+#### 4. `initdeck`
 Initializes the deck directory if it does not already exist.
-
 - **Usage**: `git deck pm initdeck`
 
-#### 5. createdeck
+#### 5. `createdeck`
 Creates or updates the `DECK.md` file based on the existing cards and boards.
-
 - **Usage**: `git deck pm createdeck`
 
 ---
@@ -59,4 +54,4 @@ The `createdeck` function compiles information from each board, column, and card
 ---
 
 ## Getting Help
-If at any point you need assistance, you can display this help file by running:
+If at any point you need assistance, you can display this help file by running: `git deck pm help`
