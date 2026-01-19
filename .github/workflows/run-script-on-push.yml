@@ -12,8 +12,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        
+      - name: Make script executable
+        run: chmod +x .github/gh_generate_markdown.sh
 
       - name: Run Script
+        run: ./.github/gh_generate_markdown.sh
+        shell: bash
+
+      - name: Configure Git
         run: |
-          chmod +x .github/gh_generate_markdown.sh
-          ./.github/gh_generate_markdown.sh
+          git config --local user.email "you@example.com"
+          git config --local user.name "Your Name"
+
+      - name: Commit and Push DECK.md
+        run: |
+          git add DECK.md
+          git commit -m "Update DECK.md"
+          git push
