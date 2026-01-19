@@ -1,29 +1,36 @@
-name: Generate DECK.md
+name: Commit File Workflow
 
 on:
   push:
-    paths:
-      - '.pm/**'
+    branches:
+      - main # Change to the branch you want to trigger the action
 
 jobs:
-  build:
-    runs-on: ubuntu-latest  # Indentation is crucial here
+  commit-file:
+    runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Checkout the repository
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v2
 
-      - name: Make script executable
-        run: chmod +x .github/gh_generate_markdown.sh
-
-      - name: Run Script
-        run: ./.github/gh_generate_markdown.sh
-        shell: bash
-
-      - name: Commit and push changes to master  
+      # Step 2: Create or modify a file
+      - name: Create a new file
         run: |
-          git config user.name "john"
-          git config user.email "john.doe@example.com" 
-          git add DECK.md
-          git commit -m 'initial commit' DECK.md
-          git push origin HEAD
+          echo "This is a new file created by GitHub Actions." > myfile.txt
+
+      # Step 3: Configure Git
+      - name: Configure git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      # Step 4: Commit and push the changes
+      - name: Commit changes
+        run: |
+          git add myfile.txt
+          git commit -m "Add myfile.txt created by GitHub Actions"
+          git push origin main # Change to the branch you want to push to
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
