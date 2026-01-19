@@ -5,10 +5,15 @@ on:
     branches:
       - main # Change to the branch you want to trigger the action
 
+permissions:               # Add permissions here at the workflow level
+  contents: write
+
 jobs:
   commit-file:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
+    
     steps:
       # Step 1: Checkout the repository
       - name: Checkout code
@@ -30,7 +35,11 @@ jobs:
         run: |
           git add myfile.txt
           git commit -m "Add myfile.txt created by GitHub Actions"
-          git push origin main # Change to the branch you want to push to
+          #git push origin main # Change to the branch you want to push to
+          git push https://hoss-java:${{ secrets.PAT }}@github.com/hoss-java/githooks.git HEAD:main
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
 
+
+remote: Permission to user/repo.git denied to github-actions[bot].
+fatal: unable to access 'https://github.com/user/repo.git/': The requested URL returned error: 403
