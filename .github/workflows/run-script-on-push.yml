@@ -32,8 +32,9 @@ jobs:
           git add DECK.md
           git commit -m "Update DECK.md"
 
-          # Push to master using the PAT for authentication  
-          git push https://${PAT}@github.com/${REPO}.git master  
+          # Push to master using the PAT for authentication
+          git push -u origin main
+          #git push https://${PAT}@github.com/${REPO}.git master  
           else  
           echo "No changes to commit. Exiting."  
           fi  
