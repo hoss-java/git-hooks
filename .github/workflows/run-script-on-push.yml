@@ -20,18 +20,30 @@ jobs:
         run: ./.github/gh_generate_markdown.sh
         shell: bash
 
-      - name: Configure Git
+     - name: Commit and push changes to master  
+        env:  
+          PAT: ${{ secrets.PAT }}  # GitHub PAT stored in repository secrets  
+          REPO: ${{ github.repository }}  # e.g., "username/repo-name"  
         run: |
-          git config --local user.email "you@example.com"
-          git config --local user.name "Your Name"
-
-      - name: Commit and Push DECK.md
-        run: |
-          git add DECK.md
-          git commit -m "Update DECK.md"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/hoss-java/githooks.git HEAD:<branch-name>
-
-      - name: Test GitHub Token
-        run: |
-          git fetch origin
-          echo "Token works!"
+          # Configure Git user (required for commits)  
+          git config --global user.name "GitHub Actions Bot"  
+          git config --global user.email "actions@github.com"  
+ 
+          # Checkout the master branch to avoid merge conflicts  
+          git checkout master  
+ 
+          # Pull latest changes from master (optional but safe)  
+          git pull origin master --rebase  
+ 
+          # Copy the newly built dist/ folder into master  
+          cp -r dist/ .  
+ 
+          # Check if there are changes to commit  
+          if [[ -n $(git status --porcelain) ]]; then  
+            git add dist/  
+            git commit -m "chore: update production bundle (auto-pushed by GitHub Actions)"  
+            # Push to master using the PAT for authentication  
+            git push https://${PAT}@github.com/${REPO}.git master  
+          else  
+            echo "No changes to commit. Exiting."  
+          fi  
