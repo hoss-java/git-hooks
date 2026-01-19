@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
 
       - name: Make script executable
         run: chmod +x .github/gh_generate_markdown.sh
@@ -21,20 +21,9 @@ jobs:
         shell: bash
 
       - name: Commit and push changes to master  
-        env:  
-          PAT: ${{ secrets.PAT }}  # GitHub PAT stored in repository secrets  
-          REPO: ${{ github.repository }}  # e.g., "username/repo-name"  
         run: |
-          # Configure Git user (required for commits)  
-          git config --global user.name "GitHub Actions Bot"  
-          git config --global user.email "actions@github.com"  
-
+          git config user.name "john"
+          git config user.email "john.doe@example.com" 
           git add DECK.md
-          git commit -m "Update DECK.md"
-
-          # Push to master using the PAT for authentication
-          git push -u origin main
-          #git push https://${PAT}@github.com/${REPO}.git master  
-          else  
-          echo "No changes to commit. Exiting."  
-          fi  
+          git commit -m 'initial commit' DECK.md
+          git push origin HEAD
