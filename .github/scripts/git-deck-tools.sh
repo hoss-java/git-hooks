@@ -213,57 +213,53 @@ update_gh_projects() {
     return_value=0
 
     # Loop through each board
-    for board in $DECK_BASE_DIRECTORY/*/; do
-        echo "---board"
-        board_name=${board%/}  # Remove trailing slash
-        echo "$board_name"
+    for board in $DECK_BASE_DIRECTORY/*; do
+        board_name=$(basename "$board")
         
         # Create the board in GitHub
-        ##board_response=$(create_board "$board_name")
+        board_response=$(create_board "$board_name")
         
-        ##if [[ $(echo "$board_response" | jq -r '.id') == "null" ]]; then
-        ##    echo "Failed to create board: $board_name"
-        ##    echo "$board_response"
-        ##    continue
-        ##fi
+        if [[ $(echo "$board_response" | jq -r '.id') == "null" ]]; then
+            echo "Failed to create board: $board_name"
+            echo "$board_response"
+            continue
+        fi
         
-        ##board_id=$(echo "$board_response" | jq -r '.id')
-        ##echo "Created board: $board_name (ID: $board_id)"
+        board_id=$(echo "$board_response" | jq -r '.id')
+        echo "Created board: $board_name (ID: $board_id)"
 
         # Loop through each column in the board
         for column in "$board"*/; do
-            column_name=${column%/}  # Remove trailing slash
-            column_name=${column_name##*/}  # Get only the column name
-            echo "---column"
-
-            echo "$column_name"
-
+            column_name=$(basename "$column")
+        
             # Create the column in GitHub
-            ##column_response=$(create_column "$board_id" "$column_name")
-            ##column_id=$(echo "$column_response" | jq -r '.id')
+            column_response=$(create_column "$board_id" "$column_name")
+            column_id=$(echo "$column_response" | jq -r '.id')
+            echo "Created column: $column_name (ID: $column_id)"
             
-            ##echo "   Created column: $column_name (ID: $column_id)"
-
             # Loop through each card in the column
             for card in "$column"*; do
-                if [[ -f "$card" ]]; then
-                    card_headers=$(extract_card_headers "$card")
-                    eval "$card_headers"  # Evaluate to create the associative array
+                card_name=$(basename "$card")
+                if [[ "$card_name" =~ ^[0-9]{1,4}$ ]]; then
+                    if [[ -f "$card" ]]; then
+                        card_headers=$(extract_card_headers "$card")
+                        eval "$card_headers"  # Evaluate to create the associative array
 
-                    # Get the title from headers, default to "Untitled" if not found
-                    card_title="${headers[Title]:-Untitled}"
+                        # Get the title from headers, default to "Untitled" if not found
+                        card_title="${headers[Title]:-Untitled}"
 
-                                # Initialize card_content and check if headers_output is not empty
-                    card_body=""
-                    if [[ -n "$card_headers" ]]; then
-                        # Get the content after the second ---
-                        card_body=$(extract_card_body "$card")
+                        # Initialize card_content and check if headers_output is not empty
+                        card_body=""
+                        if [[ -n "$card_headers" ]]; then
+                            # Get the content after the second ---
+                            card_body=$(extract_card_body "$card")
+                        fi
+
+                        # Create the card in GitHub
+                        card_response=$(create_card "$column_id" "$title" "$body")
+                        card_id=$(echo "$card_response" | jq -r '.id')
+                        echo "Created board: $card_name (ID: $card_id)"
                     fi
-
-                    echo "$card_title"
-                    echo "$card_body"
-                    # Create the card in GitHub
-                    ##card_response=$(create_card "$column_id" "$title" "$body")
                 fi
             done
         done
