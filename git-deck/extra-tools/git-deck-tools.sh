@@ -54,7 +54,7 @@ set -x
     local response
     response=$(curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
                     -H "Accept: application/vnd.github.v3+json" \
-                    -d "{\"name\": \"${board_name}\", \"body\": \"Project board for ${board_name}\"}" \
+                    -d "{\"name\": \"${board_name}\", \"body\": \"Project board for ${board_name} - Kanban Style\"}" \
                     "https://api.github.com/repos/${GITHUB_REPO}/projects")
 
     echo "$response"
