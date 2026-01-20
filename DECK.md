@@ -25,7 +25,8 @@ gantt
 
 # 1 - git-deck
 
-## [B001-C0001] Fix github yaml issues ![status](https://img.shields.io/badge/status-DONE-brightgreen)
+## 001-0001
+> Fix github yaml issues DONE
 > <details >
 >     <summary>Details</summary>
 > 
@@ -41,7 +42,8 @@ gantt
 > * There is no accress to remote via virtual machin that github runs
 > </details>
 
-## [B001-C0002] Update git-hooks to check titles with cards ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
+## 001-0002
+> Update git-hooks to check titles with cards NOT-STARTED
 > <details >
 >     <summary>Details</summary>
 > 
