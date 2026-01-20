@@ -1,0 +1,31 @@
+name: Sync git-deck to github projects
+
+on:
+  workflow_dispatch:  # This allows the workflow to be triggered manually
+
+jobs:
+  commit-file:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Bash
+      - name: Set up Bash
+        shell: bash
+        run: echo "Bash is set up" # This line ensures `run` is present
+
+      # Step 3: Install jq
+      - name: Install jq
+        run: sudo apt-get install -y jq  # Install jq
+
+      # Step 4: Run the script
+      - name: Run Script
+        env:
+          GITHUB_TOKEN: ${{ secrets.TAP }}  # Reference your secret token here
+        run: |
+          chmod +x .github/scripts/git-deck-tools.sh
+          ./.github/scripts/git-deck-tools.sh update-gh-projects
+
