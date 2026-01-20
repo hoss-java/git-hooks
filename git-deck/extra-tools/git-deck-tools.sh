@@ -107,8 +107,10 @@ extract_card_headers() {
 
     echo "$(declare -p headers)"
 }
-# Create an alias for the function
-alias extract_status_headers='extract_card_headers'
+# Wrapper function that passes all parameters to the main function
+extract_status_headers() {
+    extract_card_headers "$@"  # Pass all parameters to the main function
+}
 
 # Function to extract git-deck cards' body
 extract_card_body() {
@@ -142,7 +144,7 @@ generate_markdown() {
     fi
 
     # Loop through each board folder
-    for board in $DECK_BASE_DIRECTORY/*/; do
+    for board in $DECK_BASE_DIRECTORY/*; do
         # Read board ID from .id file
         board_id=$(<"$board/.id")
         board_name=$(basename "$board")
@@ -151,7 +153,7 @@ generate_markdown() {
         echo "# $board_id - $board_name" >> "$md_file"
 
         # Loop through each column folder
-        for column in "$board"*/; do
+        for column in "$board"/*; do
             column_name=$(basename "$column")
 
             # Loop through each card file in the column
@@ -171,7 +173,7 @@ generate_markdown() {
                     fi
 
                     # Read the status file for statustext and statusdetails
-                    status_file="$column_folder/.status"
+                    status_file="$column/.status"
                     if [[ -f "$status_file" ]]; then
                         status_headers=$(extract_status_headers "$status_file")
                         eval "$status_headers"  # Evaluate to create associative array
@@ -188,7 +190,7 @@ generate_markdown() {
                     {
                         echo ""
                         echo "## $board_id_fix-$card_id"
-                        echo "> $card_title ${statustext:-$column_name}"
+                        echo "> **$card_title** ${statustext:-$column_name}"
                         echo "> <details ${statusdetails}>"
                         echo ">     <summary>Details</summary>"
 
@@ -287,3 +289,4 @@ case "$command" in
         ;;
 esac
 
+git config alias.deck '!bash .git/hooks/git-deck/deck'
