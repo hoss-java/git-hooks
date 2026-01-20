@@ -49,9 +49,10 @@ collect_options() {
 
 # Function to create a project board
 create_board() {
+set -x
     echo "Using repository: $GITHUB_REPO"
     echo "Using GITHUB_TOKEN: ${GITHUB_TOKEN}"  # Optional: To see if it's set
-set -x
+
     local board_name="$1"
     local response
     response=$(curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
