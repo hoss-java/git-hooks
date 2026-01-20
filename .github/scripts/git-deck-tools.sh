@@ -290,11 +290,11 @@ collect_options "${@}"
 case "$command" in
     generate-markdown)
             generate_markdown "${@}"
-            return $?
+            exit $?
         ;;
     update-gh-projects)
             update_gh_projects "${@}"
-            return $?
+            exit $?
         ;;
     *)
         echo "Invalid card command. Usage: $(basename $0) {generate-markdown|update-gh-projects}"
