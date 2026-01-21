@@ -59,6 +59,25 @@ gantt
 > * All findings was written done in a file named `github_api_spike.md`
 > </details>
 
+## 001-0004
+> **Update git-deck-tools and clean up not used files.** ![status](https://img.shields.io/badge/status-DONE-brightgreen)
+> <details >
+>     <summary>Details</summary>
+> The goal of this card is to clean up scripts and YAML files,
+> 
+> # DOD (definition of done):
+> * All files are pushed.
+> 
+> # TODO:
+> - [x] 1. Remove sync part from git-deck-tools.sh
+> - [x] 2. Update YAML files and remove sync to gh boards parts
+> - [X] 3. Remove test tokens from github
+> - [x] 4. Test the main Github action to create DECK.md works fine
+> 
+> # Reports:
+> *
+> </details>
+
 ## 001-0002
 > **Update git-hooks to check titles with cards** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
 > <details >
