@@ -1,10 +1,9 @@
 #!/bin/bash
-
 # GitHub settings
 GIT_ROOT="$(git rev-parse --show-toplevel)"
 GITHUB_TOKEN="${GITHUB_TOKEN}"
-GITHUB_REPO="YOUR_USERNAME/YOUR_REPOSITORY"  # Format: username/repo
-DECK_BASE_DIRECTORY="$GIT_ROOT/.pm/deck"                      # Your base directory for boards
+GITHUB_REPO="YOUR_USERNAME/YOUR_REPOSITORY" # Format: username/repo
+DECK_BASE_DIRECTORY="$GIT_ROOT/.pm/deck" # Your base directory for boards
 
 # Default values for options
 option_output='info'
@@ -45,40 +44,6 @@ collect_options() {
         esac
     done
     option_output=$(echo "$option_output" | tr '[:upper:]' '[:lower:]')
-}
-
-# Function to create a project board
-create_board() {
-    local board_name="$1"
-    local response
-    response=$(curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
-                    -H "Accept: application/vnd.github.v3+json" \
-                    -d "{\"name\": \"${board_name}\", \"body\": \"Project board for ${board_name} - Kanban Style\"}" \
-                    "https://api.github.com/repos/hoss-java/git-hooks/projects")
-    echo "$response"
-}
-
-# Function to create a column in a board
-create_column() {
-    local board_id="$1"
-    local column_name="$2"
-    local response
-    response=$(curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
-                    -d "{\"name\": \"${column_name}\"}" \
-                    "https://api.github.com/projects/${board_id}/columns")
-    echo "$response"
-}
-
-# Function to create a card in a column
-create_card() {
-    local column_id="$1"
-    local title="$2"
-    local body="$3"
-    local response
-    response=$(curl -s -X POST -H "Authorization: token ${GITHUB_TOKEN}" \
-                    -d "{\"note\": \"${body}\", \"content_id\": \"${title}\"}" \
-                    "https://api.github.com/projects/columns/${column_id}/cards")
-    echo "$response"
 }
 
 # Function to extract git-deck cards' headers
@@ -209,75 +174,6 @@ generate_markdown() {
     return $return_value
 }
 
-# Function to update/sync github projects from git-deck boards
-update_gh_projects() {
-    return_value=0
-
-    # Loop through each board
-    for board in $DECK_BASE_DIRECTORY/*; do
-        board_name=$(basename "$board")
-        
-        # Create the board in GitHub
-        board_response=$(create_board "$board_name")    
-        if [[ $(echo "$board_response" | jq -r '.id') == "null" ]]; then
-            echo "Failed to create board: $board_name"
-            echo "$board_response"
-            return 1
-        fi
-        
-        board_id=$(echo "$board_response" | jq -r '.id')
-        echo "Created board: $board_name (ID: $board_id)"
-
-        # Loop through each column in the board
-        for column in "$board"*/; do
-            column_name=$(basename "$column")
-        
-            # Create the column in GitHub
-            column_response=$(create_column "$board_id" "$column_name")
-            if [[ $(echo "$column_response" | jq -r '.id') == "null" ]]; then
-                echo "Failed to create board: $column_name"
-                echo "$column_response"
-                return 1
-            fi
-
-            column_id=$(echo "$column_response" | jq -r '.id')
-            echo "Created column: $column_name (ID: $column_id)"
-            
-            # Loop through each card in the column
-            for card in "$column"*; do
-                card_name=$(basename "$card")
-                if [[ "$card_name" =~ ^[0-9]{1,4}$ ]]; then
-                    if [[ -f "$card" ]]; then
-                        card_headers=$(extract_card_headers "$card")
-                        eval "$card_headers"  # Evaluate to create the associative array
-
-                        # Get the title from headers, default to "Untitled" if not found
-                        card_title="${headers[Title]:-Untitled}"
-
-                        # Initialize card_content and check if headers_output is not empty
-                        card_body=""
-                        if [[ -n "$card_headers" ]]; then
-                            # Get the content after the second ---
-                            card_body=$(extract_card_body "$card")
-                        fi
-
-                        # Create the card in GitHub
-                        card_response=$(create_card "$column_id" "$title" "$body")
-                        if [[ $(echo "$card_response" | jq -r '.id') == "null" ]]; then
-                            echo "Failed to create board: $column_name"
-                            echo "$card_response"
-                            return 1
-                        fi
-                        card_id=$(echo "$card_response" | jq -r '.id')
-                        echo "Created board: $card_name (ID: $card_id)"
-                    fi
-                fi
-            done
-        done
-    done
-    return $return_value
-}
-
 # Main
 command="$1"
 command=$(echo "$command" | tr '[:upper:]' '[:lower:]')
@@ -289,13 +185,7 @@ case "$command" in
             generate_markdown "${@}"
             exit $?
         ;;
-    update-gh-projects)
-            update_gh_projects "${@}"
-            exit $?
-        ;;
     *)
-        echo "Invalid card command. Usage: $(basename $0) {generate-markdown|update-gh-projects}"
+        echo "Invalid card command. Usage: $(basename $0) {generate-markdown}"
         ;;
 esac
-
-git config alias.deck '!bash .git/hooks/git-deck/deck'

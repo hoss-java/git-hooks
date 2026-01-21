@@ -1,0 +1,17 @@
+---
+Title: Update git-deck-tools and clean up not used files.
+Tags: git-deck
+---
+The goal of this card is to clean up scripts and YAML files,
+
+# DOD (definition of done):
+* All files are pushed.
+
+# TODO:
+- [] 1. Remove sync part from git-deck-tools.sh
+- [] 2. Update YAML files and remove sync to gh boards parts
+- [] 3. Remove test tokens from github
+- [] 4. Test the main Github action to create DECK.md works fine
+
+# Reports:
+*
