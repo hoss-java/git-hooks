@@ -55,3 +55,20 @@ gantt
 > # Reports:
 > *
 > </details>
+
+## 001-0003
+> **Work around Github api.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
+> <details open>
+>     <summary>Details</summary>
+> 
+> # DOD (definition of done):
+> The goal of this card is to demonstrate how to use the GitHub API to synchronize tasks between Git-Deck boards and GitHub Kanban boards.
+> 
+> # TODO:
+> - [x] 1. Understand Github API
+> - [x] 2. How to to use it to automate tasks
+> - [x] 3. Work around how to develop a two ways sync between git-deck and Github kanban board
+> 
+> # Reports:
+> * All findings was written done in a file named `github_api_spike.md`
+> </details>
