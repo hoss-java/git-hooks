@@ -113,24 +113,53 @@ gantt
 > **Connect git-deck and git hooks message.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
 > <details open>
 >     <summary>Details</summary>
-> The goal of this card is to improve gut-deck integrations with git.
+> The goal of this card is to improve gut-deck integration with git.
 > 
 > # DOD (definition of done):
 > Git message hook check cards before commit.
-> Auto complatations suggest git messages based on ONGOING card.
+> Auto complete git messages suggestions based on ONGOING card.
 > A new option to ignore message format is added to git hooks.
 > All findings are documented
 > 
 > # TODO:
-> - [] 1. Add check cards' ID to git message hooks
-> - [] 2. Add option to skip commit message format
-> - [] 3. Auto-complet for commit messages
-> - [] 4. Auto add git-deck changes
-> - [] 5. Add auto-tag
-> - [] 6. Add other items to header (creator, user, date, start-time, done-time...)
-> - [] 7. Auto timetracker
-> - [] 8. Plan to make it possible to use as Scrum board
+> - [x] 1. Add check cards' ID to git message hooks
+> - [x] 2. Add option to skip commit message format
+> - [ ] 3. Auto-complete for commit messages
+> - [ ] 4. Auto add git-deck changes
+> - [ ] 5. Add auto-tag
+> - [ ] 6. Add other items to header (creator, user, date, start-time, done-time...)
+> - [ ] 7. Auto time tracker
+> - [ ] 8. Plan to make it possible to use as Scrum board
+> - [x] 9. Add a flag to enable/disable adding changeId
 > 
 > # Reports:
-> *
+> * Both `commit-msg-format.shinc` and `commit-msg-decklink.shinc` were updated
+> * Now It support some new directions such as `--nocheck` to skip message format check
+> * It also updated to look for settings inside of git root folder, it looks for a file named `.gitdefault`
+> * `.gitdefault` has a format as below
+> >```
+> ># Card link pattern
+> >deckLinkFlag=true
+> >deckLinkAddr="https://github.com/<GITOWNER/ORG>/$(git rev-parse --show-toplevel)/blob/main
+> >DECK.md#%BOARDID%-%CARDID%"
+> >
+> ># Message pattern
+> >messagePattern='['[bB]*[0-9]-[cC]*[0-9]']'*
+> >messagePatternErrMsg="A message should be started with a pattern like [B<board-id>-C<card-id>]"
+> >
+> ># Add change-Id
+> >gerritChangeIdFlag=true
+> >```
+> > * **OBS!** in the file above the link address and other settings can be updated, the new hook support some variables such as `%BOARDID%` and `%CARDID%` that will be replaced when they are created through a commit.
+> > * By default the hook check a git message (the 1st message) the pattern with the pattern defined in `.gitdefault` (`messagePattern`), if it's not matched , it will show an error and ask to fix it. To skip the pattern check, a direction named `--nocheck` should be passed to the commit via 2nd or grater message for example
+> >>```
+> >>git commit -m "my commit message without pattern" -m "--nocheck"
+> >>```
+> > * Adding change-Id (used by gerrit commits) can be skipped by passing `--nochangeid` as 2nd or later message
+> >>```
+> >>git commit -m "my commit message without pattern" -m "--nochangeid"
+> >>#or skipping both pattern check and adding change-Id
+> >>git commit -m "my commit message without pattern" -m "--nochangeid" -m "--nochangeid"
+> >>```
+> * There was some challenge to update git hooks, git hooks are `sh` based not `bash` and many statements that work on bash do not work on `sh`. For example it took a while to find a solution to read a multi-lines variable line-by-line though a loop.
 > </details>
