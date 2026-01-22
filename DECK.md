@@ -92,6 +92,23 @@ gantt
 > *
 > </details>
 
+## 001-0006
+> **Develop a simple installer for git-deck** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
+> <details >
+>     <summary>Details</summary>
+> The goal of this card is to code a simple script to install and setup git-deck
+> 
+> # DOD (definition of done):
+> An installer is developed and tested.
+> A README is added as a user guide.
+> 
+> # TODO:
+> - [] 1.
+> 
+> # Reports:
+> *
+> </details>
+
 ## 001-0005
 > **Connect git-deck and git hooks message.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
 > <details open>
