@@ -78,6 +78,32 @@ gantt
 > *
 > </details>
 
+## 001-0006
+> **Develop a simple installer for git-deck** ![status](https://img.shields.io/badge/status-DONE-brightgreen)
+> <details >
+>     <summary>Details</summary>
+> The goal of this card is to code a simple script to install and setup git-deck
+> 
+> # DOD (definition of done):
+> An installer is developed and tested.
+> A README is added as a user guide.
+> 
+> # TODO:
+> - [x] 1. Reorganize files
+> - [x] 2. Develop a simple installer
+> 
+> # Reports:
+> * Files reorganize to separate hook files and other files, hooks now moved to folder name hooks
+> * `github_api_spike.md` was moved to root of the repo
+> * `git-deck` templates were copied inside of `hooks/git-deck`
+> > * **OBS!** It needs to update `git-deck` script to look for templates inside of the `hooks/git-deck`
+> * A simple installer was developed to install git hooks and git-deck files
+> > * To use the installer it needs to change the current path to the git folder that is planed to to use git hooks and got-deck
+> > * The installer add almost all files to `.git/hooks` in the current git folder.
+> > * A file name `.gitdefault` is copied to the git root folder
+> > * A file named `git-deck-completion.sh` is copied to the HOME folder of the current user and then the file is sourced via `.bashrc` and `.bash_profile`
+> </details>
+
 ## 001-0002
 > **Update git-hooks to check titles with cards** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
 > <details >
@@ -145,30 +171,4 @@ gantt
 > >>git commit -m "my commit message without pattern" -m "--nochangeid" -m "--nochangeid"
 > >>```
 > * There was some challenge to update git hooks, git hooks are `sh` based not `bash` and many statements that work on bash do not work on `sh`. For example it took a while to find a solution to read a multi-lines variable line-by-line though a loop.
-> </details>
-
-## 001-0006
-> **Develop a simple installer for git-deck** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
-> <details open>
->     <summary>Details</summary>
-> The goal of this card is to code a simple script to install and setup git-deck
-> 
-> # DOD (definition of done):
-> An installer is developed and tested.
-> A README is added as a user guide.
-> 
-> # TODO:
-> - [x] 1. Reorganize files
-> - [x] 2. Develop a simple installer
-> 
-> # Reports:
-> * Files reorganize to separate hook files and other files, hooks now moved to folder name hooks
-> * `github_api_spike.md` was moved to root of the repo
-> * `git-deck` templates were copied inside of `hooks/git-deck`
-> > * **OBS!** It needs to update `git-deck` script to look for templates inside of the `hooks/git-deck`
-> * A simple installer was developed to install git hooks and git-deck files
-> > * To use the installer it needs to change the current path to the git folder that is planed to to use git hooks and got-deck
-> > * The installer add almost all files to `.git/hooks` in the current git folder.
-> > * A file name `.gitdefault` is copied to the git root folder
-> > * A file named `git-deck-completion.sh` is copied to the HOME folder of the current user and then the file is sourced via `.bashrc` and `.bash_profile`
 > </details>
