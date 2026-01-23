@@ -105,14 +105,25 @@ gantt
 > </details>
 
 ## 001-0002
-> **Update git-hooks to check titles with cards** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
-> <details >
+> **Update and Enhance Git Hooks for Better Optimization and Readability.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
+> <details open>
 >     <summary>Details</summary>
+> The goal of card to improve an optimize the current code for all git-deck parts.
 > 
 > # DOD (definition of done):
+> `card`, `column`, `board` and pm are optimized.
+> `deck` is support an auto completion function to use/call from `git-deck-completion`.
+> A new auto completion to help to find git commit title is added to to `git-deck-completion`.
 > 
 > # TODO:
-> - [] 1.
+> - [ ] 1. Remove or Unify Repeated Blocks in `card`
+> - [ ] 2. Remove or Unify Repeated Blocks in `column`
+> - [ ] 3. Remove or Unify Repeated Blocks in `board`
+> - [ ] 4. Improve varaible usages (local, global) in all code's files
+> - [ ] 5. Add a new method to predicate args/params (will be used by `git-deck-completion`)
+> - [ ] 6. Update `deck` to support changes
+> - [ ] 7. Add a hook methods to support events' taps
+> - [ ] 8. Organize file structure if it needs
 > 
 > # Reports:
 > *
