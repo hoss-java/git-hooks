@@ -10,14 +10,20 @@ The goal of card to improve an optimize the current code for all git-deck parts.
 A new auto completion to help to find git commit title is added to to `git-deck-completion`.
 
 # TODO:
-- [ ] 1. Remove or Unify Repeated Blocks in `card`
-- [ ] 2. Remove or Unify Repeated Blocks in `column`
-- [ ] 3. Remove or Unify Repeated Blocks in `board`
-- [ ] 4. Improve varaible usages (local, global) in all code's files
+- [x] 1. Remove or Unify Repeated Blocks in `card`
+- [x] 2. Remove or Unify Repeated Blocks in `column`
+- [x] 3. Remove or Unify Repeated Blocks in `board`
+- [x] 4. Improve varaible usages (local, global) in all code's files
 - [ ] 5. Add a new method to predicate args/params (will be used by `git-deck-completion`)
-- [ ] 6. Update `deck` to support changes
-- [ ] 7. Add a hook methods to support events' taps
-- [ ] 8. Organize file structure if it needs
+- [x] 6. Update `deck` to support changes
+- [x] 7. Add a hook methods to support events' trapps
+- [x] 8. Organize file structure if it needs
 
 # Reports:
-*
+* Now commands are modular and can be added new commands mor structured
+* All parts were coded to make it fully modular
+* Now the main functions support share libraries
+* Now it suports hook for all commands, hooks can be defined for before and after running a command
+* All files were orgonaized to make it more clear
+* Several bugs were fixed
+* 

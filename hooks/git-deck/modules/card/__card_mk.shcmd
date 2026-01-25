@@ -1,0 +1,73 @@
+# Create a new card on the current default column of the selected board
+__card_mk() {
+    local return_value=1
+    # Open/Create the new card at <default-board>/<default-column>
+    local default_editor=nano
+    local editor=${editor:-$default_editor}
+
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    ([ "$DEFAULT_COLUMN" -lt 1 ] || [ -z "$DEFAULT_COLUMN_FILE" ]) && \
+        echo "Error: No column selected." && \
+        return $return_value
+
+    if [ -z "$1" ]; then
+        echo "Error: No card title provided."
+        return $return_value
+    fi
+    local card_title="$1"
+
+    local search_output
+    search_output=$(__card_find "title=$card_title" --output notitle --match full)
+    local search_status=$?
+    if [ "$search_status" == 0 ]; then
+        # Get the first line
+        local first_line=$(echo "$search_output" | head -n 1)
+        echo "There is a card exact with the same title, '$first_line'"
+        read -p "Do you want to Edit it instead to create a new one? (y/n): " answer
+
+        if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
+            $default_editor $DECK_DIR/$first_line
+            return_value=$?
+            return $return_value
+        fi
+    fi
+
+    # Scan for existing IDs in board directories
+    local existing_ids=$(find "$DECK_DIR/$DEFAULT_BOARD_NAME" -mindepth 1 -maxdepth 2 -type f -printf "%f\n" | \
+        awk '{print $1+0}' | awk '$1 != 0' | sort -n)
+
+    # Find the first available ID
+    local new_id=1
+    while echo "$existing_ids" | grep -q "^$new_id$"; do
+        new_id=$((new_id + 1))
+    done
+
+    # Ensure the ID is a three-digit number; max is 999
+    if [ "$new_id" -gt 9999 ]; then
+        echo "Error: Maximum number of cards (10000) reached."
+        return $return_value
+    fi
+
+    # Look for a card template
+    local card_template="$DECK_DIR/$DEFAULT_BOARD_NAME/$DEFAULT_COLUMN_NAME/default-card"
+    local new_card_file="$DECK_DIR/$DEFAULT_BOARD_NAME/$DEFAULT_COLUMN_NAME/$(printf "%04d" "$new_id")"
+    if [ -f "$card_template" ]; then
+        cp "$card_template" "$new_card_file"
+        # Use sed to replace %TITLE% with the new title
+        sed -i "s/%TITLE%/$card_title/g" "$new_card_file"
+    else
+        {
+            echo "---"
+            echo "Title: $card_title"
+            echo "Tags:"
+            echo "---"
+        } > "$new_card_file"
+    fi
+
+    $default_editor $new_card_file
+    return_value=$?
+    return $return_value
+}

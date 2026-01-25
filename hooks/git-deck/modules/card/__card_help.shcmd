@@ -1,0 +1,5 @@
+# cat card.help file
+__card_help() {
+    local card_help_file="$MODULES_PATH/card.help"
+    cat_help "$card_help_file"
+}

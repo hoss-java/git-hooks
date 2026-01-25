@@ -1,0 +1,54 @@
+# Set a column as default for its board
+__column_status() {
+    local return_value=1
+
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    if [ -z "$1" ]; then
+        echo "Error: No column name provided to set as active."
+        return 1
+    fi
+
+    local column_name=$1
+    shift 1 # Shift past the first two parameters
+
+    # Default values for options
+    local option_status_text="$column_name"
+    local option_status_details=''
+    # Parse options using getopts
+    # Call the function and evaluate the output
+    local output=$(parse_options "Status-text:Status-details" "t:b" "$@")
+    # Print options if the function executed successfully
+    if [[ $? -eq 0 ]]; then
+        eval "$output"  # Evaluate the options as variables
+        # Loop through the array and assign values to variables
+        for key in "${!options[@]}"; do
+            eval "$key=\"\${options[$key]}\""
+        done
+    else
+        return 1
+    fi
+
+    local column_dir="$DECK_DIR/$DEFAULT_BOARD_NAME/$column_name"
+
+    # Check if the column directory exists
+    local column_status="$column_dir/.status"
+    if [ -d "$column_dir" ]; then
+        [ -f "$column_dir/.id" ] &&\
+            column_id=$(cat "$column_dir/.id")
+
+        > "$column_status"
+        # Write card details to the output markdown file
+        {
+            echo "---"
+            echo "statustext=$option_status_text"
+            echo "statusdetails=$option_status_details"
+            echo "---"
+        } >> "$column_status"
+        return_value=$?
+        echo "Column status for '$DEFAULT_BOARD_NAME/$column_name' with ID '$column_id' was updated."
+    fi
+    return $return_value
+}

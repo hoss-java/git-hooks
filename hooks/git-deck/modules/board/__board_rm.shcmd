@@ -1,0 +1,64 @@
+# Remove a board directory and its ID mapping
+__board_rm() {
+    local return_value=1
+    if [ -z "$1" ]; then
+        echo "Error: No board name provided."
+        return 1
+    fi
+
+    local board_name="$1"
+    shift 1 # Shift past the first two parameters
+
+    # Default values for options
+    local option_remove='bin'
+    # Parse options using getopts
+    # Call the function and evaluate the output
+    local output=$(parse_options "remove" "r" "$@")
+    # Print options if the function executed successfully
+    if [[ $? -eq 0 ]]; then
+        eval "$output"  # Evaluate the options as variables
+        # Loop through the array and assign values to variables
+        for key in "${!options[@]}"; do
+            eval "$key=\"\${options[$key]}\""
+        done
+    else
+        return 1
+    fi
+
+    local board_dir="$DECK_DIR/$board_name"
+    # Check if the board directory exists
+    if [ -d "$board_dir" ]; then
+        read -p "Are you sure you want to remove the board '$board_name' ? (y/n): " answer
+
+        if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
+            # Read the ID from the .id file
+            if [ -f "$board_dir/.id" ]; then
+                if [ "$option_remove" == 'permanent' ]; then
+                    local board_id=$(cat "$board_dir/.id")
+                    rm -r "$board_dir"
+                    return_value=$?
+                    echo "Board '$board_name' with ID '$board_id' removed."
+                else
+                    local bin_folder="$DECK_DIR/.bin"
+                    if [ ! -d "$bin_folder" ]; then
+                        mkdir -p "$bin_folder"
+                    fi
+                    mv "$board_dir" "$bin_folder"
+                    return_value=$?
+                    echo "Board '$board_name' with ID '$board_id' was moved to '$bin_folder'."
+                fi
+                # Check if this board was the default and reset it if necessary
+                if [ -f "$DEFAULT_BOARD_FILE" ] && [ "$(cat "$DEFAULT_BOARD_FILE")" = "$board_id" ]; then
+                    echo "Default board was deleted. No active board is selected."
+                    rm "$DEFAULT_BOARD_FILE"
+                    return_value=$?
+                fi
+            else
+                echo "Error: No .id file found for board '$board_name'."
+            fi
+        fi
+    else
+        echo "Error: Board '$board_name' does not exist."
+    fi
+    return $return_value
+}

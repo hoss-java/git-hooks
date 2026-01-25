@@ -50,3 +50,4 @@ The following commands are available for managing boards:
      ```
      git deck board cleanup
      ```
+

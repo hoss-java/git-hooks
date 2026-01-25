@@ -1,0 +1,72 @@
+# List all cards within .pm/deck/<default-board>/
+__card_ls() {
+    local return_value=1
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    # Default values for options
+    local option_output='full'
+    local option_column='*'
+    # Parse options using getopts
+    # Call the function and evaluate the output
+    local output=$(parse_options "output:Column" "o:c" "$@")
+    # Print options if the function executed successfully
+    if [[ $? -eq 0 ]]; then
+        eval "$output"  # Evaluate the options as variables
+        # Loop through the array and assign values to variables
+        for key in "${!options[@]}"; do
+            eval "$key=\"\${options[$key]}\""
+        done
+    else
+        return 1
+    fi
+
+    if [ "$option_output" == 'full' ]; then
+        echo "Cards:"
+    fi
+
+    for card in "$DECK_DIR"/$DEFAULT_BOARD_NAME/$option_column/*; do
+        if [ -f "$card" ]; then
+            local card_name=$(basename "$card")
+            local card_path=$(dirname "$card")
+            local card_colunm=$(basename "$(dirname "$card")")
+            if [[ "$card_name" =~ ^[0-9]{1,4}$ ]]; then
+                eval "$(extract_card_headers "$card")"
+                # Access the headers with the returned associative array
+                local card_title=''
+                if [ ${#headers[@]} -eq 0 ]; then
+                    card_title="**No title found**"
+                else
+                    # Access the title in a case-insensitive manner
+                    for k in "${!headers[@]}"; do
+                        if [[ "${k,,}" == "title" ]]; then # Convert key to lowercase for comparison
+                            card_title="${headers[$k]}"
+                            break
+                        fi
+                    done
+                fi
+                local card_id=$((10#$card_name))
+                local default_card_file=$card_path/.default
+                local selected_text=''
+                if [ -f "$default_card_file" ]; then 
+                    selected_id=$(cat "$default_card_file")
+                    selected_id=$((10#$selected_id))
+                    if [ "$card_id" = "$selected_id" ]; then
+                        selected_text='(Selected)'
+                    fi
+                fi
+
+                if [ "$option_output" == 'short' ]; then
+                    echo "$card_name"
+                elif [ "$option_output" == 'notitle' ]; then
+                    echo "$DEFAULT_BOARD_NAME/$card_colunm/$card_name"
+                else
+                    echo " $DEFAULT_BOARD_NAME/$card_colunm/$card_name - $card_title $selected_text"
+                fi
+                return_value=0
+            fi
+        fi
+    done
+    return $return_value
+}

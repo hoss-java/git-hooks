@@ -1,0 +1,25 @@
+# Set a column as default for its board
+__column_set() {
+    local return_value=1
+
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    if [ -z "$1" ]; then
+        echo "Error: No column name provided to set as active."
+        return 1
+    fi
+
+    local column_name=$1
+    local column_dir="$DECK_DIR/$DEFAULT_BOARD_NAME/$column_name"
+
+    # Check if the column directory exists
+    if [ -d "$column_dir" ] && [ -f "$column_dir/.id" ]; then
+        local column_id=$(cat "$column_dir/.id")
+        echo "$column_id" > "$DEFAULT_COLUMN_FILE"
+        return_value=$?
+        echo "Column '$DEFAULT_BOARD_NAME/$column_name' with ID '$column_id' is now set as the active column."
+    fi
+    return $return_value
+}

@@ -1,0 +1,58 @@
+# List all column directories within .pm/deck/<default-board>
+__column_ls() {
+    local return_value=1
+
+    # Default values for options
+    local option_output='full'
+     # Parse options using getopts
+    # Call the function and evaluate the output
+    local output=$(parse_options "output" "o" "$@")
+    # Print options if the function executed successfully
+    if [[ $? -eq 0 ]]; then
+        eval "$output"  # Evaluate the options as variables
+        # Loop through the array and assign values to variables
+        for key in "${!options[@]}"; do
+            eval "$key=\"\${options[$key]}\""
+        done
+    else
+        return 1
+    fi
+
+    if [ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]; then
+        [ "$option_output" == 'full' ] &&\
+            echo "Error: No board selected."
+        return $return_value
+    fi
+
+    if [ -d "$DECK_DIR/$DEFAULT_BOARD_NAME" ]; then
+        [ "$option_output" == 'full' ] && \
+            echo "Column:"
+
+        local selected_id=""
+        [ -f "$DEFAULT_COLUMN_FILE" ] && selected_id=$(cat "$DEFAULT_COLUMN_FILE")
+        for column in "$DECK_DIR"/$DEFAULT_BOARD_NAME/*; do
+            if [ -d "$column" ] && [ -f "$column/.id" ]; then
+                local column_name=$(basename "$column")
+                local column_id=$(cat "$column/.id")
+
+                if [ "$option_output" == 'id' ]; then
+                    echo "$column_id"
+                elif [ "$option_output" == 'name' ]; then
+                    echo "$column_name"
+                else
+                    if [ "$column_id" = "$selected_id" ]; then
+                        echo " $column_id: $DEFAULT_BOARD_NAME/$column_name (Selected)"
+                    else
+                        echo " $column_id: $DEFAULT_BOARD_NAME/$column_name"
+                    fi
+                fi
+                return_value=0
+
+            fi
+        done
+    else
+        [ "$option_output" == 'full' ] && \
+            echo "No column found."
+    fi
+    return $return_value
+}

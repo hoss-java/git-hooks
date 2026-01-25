@@ -1,0 +1,128 @@
+# Search for cards on the current default board
+__card_find() {
+    local return_value=1
+
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    if [ -z "$1" ]; then
+        echo "Error: No search string provided."
+        return $return_value
+    fi
+
+    local search_string="$1"
+    shift 1 # Shift past the first two parameters
+
+    eval $(split_string "$search_string")
+
+    # Default values for options
+    local option_output='full'
+    local option_match='partial'
+    # Parse options using getopts
+    # Call the function and evaluate the output
+    local output=$(parse_options "output:match" "o:m" "$@")
+    # Print options if the function executed successfully
+    if [[ $? -eq 0 ]]; then
+        eval "$output"  # Evaluate the options as variables
+        # Loop through the array and assign values to variables
+        for key in "${!options[@]}"; do
+            eval "$key=\"\${options[$key]}\""
+        done
+    else
+        return 1
+    fi
+
+    if [ "$option_output" == 'full' ]; then
+        echo "Found cards:"
+    fi
+
+    for card in "$DECK_DIR"/$DEFAULT_BOARD_NAME/*/*; do
+        if [ -f "$card" ]; then
+            local card_name=$(basename "$card")
+            local card_path=$(dirname "$card")
+            local card_colunm=$(basename "$(dirname "$card")")
+            if [[ "$card_name" =~ ^[0-9]{1,4}$ ]]; then
+                eval "$(extract_card_headers "$card")"
+                # Initialize a flag to determine if all headers are matched
+                local all_matched=false
+
+                for header_key in "${!headers[@]}"; do
+                    local header_value="${headers[$header_key]}"
+                    local header_key=$(echo "$header_key" | xargs | tr '[:upper:]' '[:lower:]') # Trim whitespace and convert to lowercase
+                    local header_key_lower=$(echo "$header_key" | tr '[:upper:]' '[:lower:]')
+                    local header_value_lower=$(echo "$header_value" | tr '[:upper:]' '[:lower:]')
+
+                    local found=false # Flag to determine if the header is found
+
+                    for search_key in "${!kv_pairs[@]}"; do
+                        local search_value="${kv_pairs[$search_key]}"
+                        # Convert key and value to lowercase for comparison
+                        local search_key_lower=$(echo "$search_key" | tr '[:upper:]' '[:lower:]')
+                        local search_value_lower=$(echo "$search_value" | tr '[:upper:]' '[:lower:]')
+
+                        # Check if the key is 'freetext', continue to next iteration if it is
+                        if [[ "$search_key_lower" == "freetext" ]]; then
+                            continue
+                        fi
+
+                        if [ "$search_key_lower" == "$header_key_lower" ]; then
+                            if [ "$option_match" == 'full' ]; then
+                                if [[ "$header_value_lower" == "$search_value_lower" ]]; then
+                                    found=true
+                                fi
+                            elif [[ "$header_value_lower" == *"$search_value_lower"* ]]; then
+                                found=true
+                            fi
+
+                            if [ "$found" == true ]; then
+                                break # Break inner loop if a match is found
+                            fi
+                        fi
+                    done
+
+                    if $found; then
+                        all_matched=true # Set the flag if any header is not found
+                        break # No need to check further if one isn't found
+                    fi
+                done
+
+                if $all_matched == true; then
+                    local card_title=''
+                    if [ ${#headers[@]} -eq 0 ]; then
+                        card_title="**No title found**"
+                    else
+                        # Access the title in a case-insensitive manner
+                        for k in "${!headers[@]}"; do
+                            if [[ "${k,,}" == "title" ]]; then # Convert key to lowercase for comparison
+                                card_title="${headers[$k]}"
+                                break
+                            fi
+                        done
+                    fi
+
+                    local card_id=$((10#$card_name))
+                    local default_card_file=$card_path/.default
+                    local selected_text=''
+                    if [ -f "$default_card_file" ]; then 
+                        selected_id=$(cat "$default_card_file")
+                        if [ "$card_id" = "$selected_id" ]; then
+                            selected_text='(Selected)'
+                        fi
+                    fi
+
+                    if [ "$option_output" == 'short' ]; then
+                        echo "$card_name"
+                    elif [ "$option_output" == 'notitle' ]; then
+                        echo "$DEFAULT_BOARD_NAME/$card_colunm/$card_name"
+                    else
+                        echo " $DEFAULT_BOARD_NAME/$card_colunm/$card_name - $card_title $selected_text"
+                    fi
+                    return_value=0
+                fi
+            fi
+        fi
+    done
+
+    return $return_value
+}

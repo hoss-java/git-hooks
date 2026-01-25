@@ -1,0 +1,26 @@
+# Cat a card from the current default board
+__card_cat() {
+    local return_value=1
+
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    if [ -z "$1" ]; then
+        echo "Error: No card id provided."
+        return 1
+    fi
+
+    local card_id_name=$1
+    local card_id=$((10#$card_id_name))
+    for card in "$DECK_DIR"/$DEFAULT_BOARD_NAME/*/$(printf "%04d" "$card_id"); do
+        if [ -f "$card" ]; then
+            cat "$card"
+            return_value=$?
+            break
+        else
+            echo "Error: No card with id '$card_id_name' found for column '$DEFAULT_BOARD_NAME/$DEFAULT_COLUMN_NAME'."
+        fi
+    done
+    return $return_value
+}

@@ -1,0 +1,5 @@
+# A pre board rm hook
+__hook_pre_board_rm(){
+	echo "${FUNCNAME[0]}: $@"
+	return 0
+}

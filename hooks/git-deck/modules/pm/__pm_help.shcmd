@@ -1,0 +1,5 @@
+# cat pm.help file
+__pm_help() {
+    local pm_help_file="$MODULES_PATH/pm.help"
+    cat_help "$pm_help_file"
+}

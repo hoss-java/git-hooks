@@ -1,0 +1,32 @@
+# Initialize for for a git folder
+__pm_init() {
+    return_value=1
+
+    # Default values for options
+    option_template='default'
+     # Parse options using getopts
+    # Call the function and evaluate the output
+    local output=$(parse_options "template" "t" "$@")
+    # Print options if the function executed successfully
+    if [[ $? -eq 0 ]]; then
+        eval "$output"  # Evaluate the options as variables
+        # Loop through the array and assign values to variables
+        for key in "${!options[@]}"; do
+            eval "$key=\"\${options[$key]}\""
+        done
+    else
+        return 1
+    fi
+
+    if [ -d "$PM_DIR" ] && [ -f "$PM_DIR/pm.md" ] ; then
+        echo "PM is already initialized at $PM_DIR."
+    else
+        [ ! -d "$PM_DIR" ] && \
+            mkdir -p "$PM_DIR"
+
+        cp "$TEMPLATES_DIR/pm/$option_template" "$PM_DIR/pm.md"
+        return_value=$?
+        echo "Initialized PM at $PM_DIR."
+    fi
+    return $return_value
+}

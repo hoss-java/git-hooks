@@ -1,0 +1,5 @@
+# A pre board command hook
+__hook_pre_board_cmd(){
+	echo "${FUNCNAME[0]}: $@"
+	return 0
+}

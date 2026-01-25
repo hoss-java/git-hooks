@@ -1,0 +1,45 @@
+# init pm for a git folder
+__pm_edit() {
+    return_value=1
+
+    # Default values for options
+    option_editor="nano"
+    # Parse options using getopts
+    while getopts ":e:-:" opt; do
+        case $opt in
+            e)
+                option_editor="$OPTARG"
+                ;;
+            -)
+                case "${OPTARG}" in
+                    editor)
+                        option_editor="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                        ;;
+                    *)
+                        echo "Invalid option: --${OPTARG}" >&2
+                        return 1
+                        ;;
+                esac
+                ;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
+                return 1
+                ;;
+            :)
+                echo "Option -$OPTARG requires an argument." >&2
+                return 1
+                ;;
+        esac
+    done
+    option_editor=$(echo "$option_editor" | tr '[:upper:]' '[:lower:]')
+
+    if [ -f "$PM_DIR/pm.md" ]; then
+        DEFAULT_EDITOR="$option_editor"
+        EDITOR=${EDITOR:-$DEFAULT_EDITOR}
+        $DEFAULT_EDITOR "$PM_DIR/pm.md"
+        return_value=$?
+    else
+        echo "Pm has not been initialized yet, '"$PM_DIR/pm.md"' was not found."
+    fi
+    return $return_value 
+}

@@ -1,0 +1,20 @@
+# Cleanup cards/columns .bin folders
+__column_cleanup() {
+    local return_value=1
+
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    local bin_folder="$DECK_DIR/$DEFAULT_BOARD_NAME/.bin/"
+    read -p "Are you sure you want to clean up the cards'/column's bin ('$bin_folder')? (y/n): " answer
+
+    if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
+        if [ -d "$bin_folder" ]; then
+            rm -r "$bin_folder"
+            return_value=$?
+            echo "'$bin_folder' was removed."
+        fi
+    fi
+    rerun $return_value
+}

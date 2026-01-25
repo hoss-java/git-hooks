@@ -1,0 +1,117 @@
+# Generic function to parse options
+parse_options() {
+    local longoptions="$1"
+    local shortoptions="$2"
+    shift 2
+    local otherparams=("$@")
+
+    # Declare an associative array for options
+    declare -A options
+
+    # Convert short options into an array
+    IFS=':' read -r -a shortopts_array <<< "$shortoptions"
+
+    # Convert long options into an array
+    IFS=':' read -r -a longopts_array <<< "$longoptions"
+
+
+    # Loop through options using getopts
+    while getopts ":$shortoptions:-:" opt; do
+        case $opt in
+            # Handle long options dynamically
+            -)
+                valid_option=false
+                for longopt in "${longopts_array[@]}"; do
+                    longopt_lower=$(echo "$longopt" | tr '[:upper:]' '[:lower:]')
+                    if [[ "$longopt_lower" == "$OPTARG" ]]; then
+                        valid_option=true
+                        # Replace '-' with '_'
+                        longopt_fixed=$(echo "$longopt_lower" | sed 's/-/_/g')
+                        options["option_${longopt_fixed}"]="${!OPTIND}"; OPTIND=$((OPTIND + 1))
+                        break
+                    fi
+                done
+                if [[ "$valid_option" == false ]]; then
+                    echo "Invalid option: --${OPTARG}" >&2
+                    return 1
+                fi
+                ;;
+            *)  # Handle short options directly
+                # Check if the option is valid by searching in the shortopts array
+                if [[ " ${shortopts_array[@]} " =~ " ${opt} " ]]; then
+                    opt_lower=$(echo "$opt" | tr '[:upper:]' '[:lower:]')
+                    if [[ -n "$OPTARG" ]]; then
+                        options["option_$opt_lower"]="$OPTARG"
+                        break
+                    fi
+                else
+                    echo "Invalid short option: -$opt" >&2
+                    return 1
+                fi
+                ;;
+            \?)
+                echo "Invalid option: -$OPTARG" >&2
+                return 1
+                ;;
+            :)
+                echo "Option -$OPTARG requires an argument." >&2
+                return 1
+                ;;
+        esac
+    done
+
+    # Convert all option values to lowercase
+    for key in "${!options[@]}"; do
+        # Check cases
+        if [[ "$key" =~ ^[A-Z]+$ ]]; then
+            # Do something for all uppercase
+            options["$key"]=$(echo "${options[$key]}" | tr '[:lower:]' '[:upper:]')
+            :
+        elif [[ "$key" =~ ^[a-z]+$ ]]; then
+            # Do something for all lowercase
+            options["$key"]=$(echo "${options[$key]}" | tr '[:upper:]' '[:lower:]')
+            :
+        elif [[ "$key" =~ [A-Z] && "$key" =~ [a-z] ]]; then
+            # Do something for mixed case
+            :
+        else
+            # Handle other cases, e.g., if it contains numbers or special characters
+            :
+        fi
+    done
+
+    # Return the options as a string
+    declare -p options  # Return the associative array
+    return 0
+}
+
+# Function to create a list of command added by a module
+create_module_command_list() {
+    declare -n commands_list="$1"  # Use nameref to modify the passed array
+    local command_identifier="$2"
+
+    # Ensure the command identifier does not contain special characters
+    local sanitized_identifier
+    sanitized_identifier=$(echo "$command_identifier" | sed 's/[^a-zA-Z0-9_]//g')
+
+    # Search for functions defined in this script or included scripts
+    for func in $(declare -F | awk '{print $3}' | grep "^__${sanitized_identifier}"); do
+        # Check if the function is defined
+        if declare -f "$func" &>/dev/null; then
+            # Extract the command by removing the prefix
+            command=$(echo "$func" | sed "s/^__${sanitized_identifier}_//;s/__${sanitized_identifier}.*$//")
+            # Use cleaned command as the key and the function name as the value
+            commands_list["$command"]="$func"
+        fi
+    done
+}
+
+# Function to show help
+cat_help() {
+    local help_file="$1"
+    if [ -f "$help_file" ]; then
+        cat "$help_file"
+    else
+        echo "Error: Help file $help_file not found."
+    fi
+}

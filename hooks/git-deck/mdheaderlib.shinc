@@ -1,0 +1,81 @@
+# exteract header from a card
+extract_card_headers() {
+    local file="$1"
+    declare -A headers
+
+    # Extract the header into a variable
+    header=$(awk '
+        BEGIN { in_header=0 }
+        /^---/ {
+            in_header=1-in_header; 
+            if (in_header == 0) exit # Exit after the second ---
+            next # Skip the --- lines
+        }
+        in_header && length($0) > 0 { print }
+    ' "$file")
+
+    # Process each line of the header
+    while IFS= read -r line; do
+        if [[ ! -z "$line" ]]; then
+            key=$(echo "$line" | cut -d':' -f1 | xargs)
+            value=$(echo "$line" | cut -d':' -f2- | xargs)
+            if [[ -n "$key" ]]; then
+                headers["$key"]="$value"
+            fi
+        fi
+    done <<< "$header"
+
+    # Return the associative array
+    echo "$(declare -p headers)"
+}
+
+# Function to get card info
+get_card_info() {
+    local card=$1
+
+    eval "$(extract_card_headers "$card")"
+    # Access the headers with the returned associative array
+    local card_title=''
+    if [ ${#headers[@]} -eq 0 ]; then
+        card_title="**No title found**"
+    else
+        # Access the title in a case-insensitive manner
+        for k in "${!headers[@]}"; do
+            if [[ "${k,,}" == "title" ]]; then # Convert key to lowercase for comparison
+                card_title="${headers[$k]}"
+                break
+            fi
+        done
+    fi
+    echo "$DEFAULT_BOARD_NAME/$card_colunm/$card_name - $card_title"
+}
+
+# Function to split a string into key-value pairs and free text
+split_string() {
+    local input_string="$1"
+    local IFS=',,'
+    read -ra items <<< "$input_string" # Split based on the specified delimiters
+
+    declare -A kv_pairs # Declare an associative array for key-value pairs
+
+    for item in "${items[@]}"; do
+        if [[ "$item" == *"="* ]]; then
+            # Split key and value
+            key="${item%%=*}"
+            value="${item#*=}"
+
+            # Format the key: trim spaces and replace spaces with dashes
+            key=$(echo "$key" | xargs | sed 's/ /-/g') 
+            value=$(echo "$value" | xargs) # Trim leading and trailing spaces
+            kv_pairs["$key"]="$value" # Store in associative array
+        else
+            # Trim the free text and append to the "freetext" key
+            trimmed_item=$(echo "$item" | xargs) # Trim leading and trailing spaces
+            # Ensure there's no extra space at the end of free text
+            kv_pairs["freetext"]+="$trimmed_item" # Append free text
+        fi
+    done
+
+    # Output the associative array
+    echo "$(declare -p kv_pairs)"
+}

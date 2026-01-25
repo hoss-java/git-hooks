@@ -1,0 +1,62 @@
+# List all board directories within .pm/deck/
+__board_ls() {
+    local return_value=1
+
+    # Default values for options
+    local option_output='full'
+    local option_type='board'
+    # Parse options using getopts
+    # Call the function and evaluate the output
+    local output=$(parse_options "output:type" "o" "$@")
+    # Print options if the function executed successfully
+    if [[ $? -eq 0 ]]; then
+        eval "$output"  # Evaluate the options as variables
+        # Loop through the array and assign values to variables
+        for key in "${!options[@]}"; do
+            eval "$key=\"\${options[$key]}\""
+        done
+    else
+        return 1
+    fi
+
+    if [ -d "$DECK_DIR" ]; then
+        [ "$option_output" == 'full' ] && \
+            echo "Boards:"
+
+        local selected_id=""
+        [ -f "$DEFAULT_BOARD_FILE" ] && selected_id=$(cat "$DEFAULT_BOARD_FILE")
+        if [ "$option_type" == 'template' ]; then
+            for template in "$TEMPLATES_DIR/board"/*; do
+                if [ -d "$template" ] ; then
+                    template_name=$(basename "$template")
+                    echo "$template_name"
+                    return_value=0
+                fi
+            done
+        elif [ "$option_type" == 'board' ]; then
+            for board in "$DECK_DIR"/*; do
+                if [ -d "$board" ] && [ -f "$board/.id" ]; then
+                    local board_name=$(basename "$board")
+                    local board_id=$(cat "$board/.id")
+
+                    if [ "$option_output" == 'id' ]; then
+                        echo "$board_id"
+                    elif [ "$option_output" == 'name' ]; then
+                        echo "$board_name"
+                    else
+                        if [ "$board_id" = "$selected_id" ]; then
+                            echo " $board_id: $board_name (Selected)"
+                        else
+                            echo " $board_id: $board_name"
+                        fi
+                    fi
+                    return_value=0
+                fi
+            done
+        fi
+    else
+        [ "$option_output" == 'full' ] && \
+            echo "No boards found."
+    fi
+    return $return_value
+}

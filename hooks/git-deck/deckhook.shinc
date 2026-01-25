@@ -1,0 +1,47 @@
+# Generic function to run pre- and post-hooks
+deck_hooks() {
+    local hook_type="$1"
+    local hook_level="$2"
+    local full_command="$hook_type ${@:3}"
+    local IFS=' '  # Internal Field Separator
+    read -ra parts <<< "$full_command"  # Split the command into parts
+
+    # Start traversing from the base hooks directory
+    local base_hook_dir="$SCRIPT_ROOT/hooks"
+    local current_hook_dir="$base_hook_dir"
+    
+    # Level counter
+    local current_level=0
+
+    # Traverse through each part in the command
+    for part in "${parts[@]}"; do  # Ignore 'git' and 'deck'
+
+        current_hook_dir="$current_hook_dir/$part"
+        ((current_level++))
+        # Check if the current level exceeds the specified level
+        if (( current_level > hook_level )); then
+            break
+        fi
+
+        # Check if the current directory exists
+        if [[ -d "$current_hook_dir" ]]; then
+            # List executable files and run them
+            for hook in "$current_hook_dir"/*.shhook; do
+                if [[ -f "$hook" ]]; then  # Check if it's a file and executable
+                    . "$hook"
+                    local hook_func="__hook_$(basename "$hook" .shhook)"
+                    # Capture output and exit code using eval
+                    hook_output="$("$hook_func" "${@:3}")"
+                    hook_exit_code=$?
+                    if [ "$hook_exit_code" -ne 0 ]; then
+                        echo "$hook_output"
+                        return $hook_exit_code
+                    fi
+                fi
+            done
+        else
+            break  # Stop if the directory does not exist
+        fi
+
+    done
+}

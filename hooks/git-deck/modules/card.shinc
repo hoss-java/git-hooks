@@ -1,0 +1,64 @@
+# Handling card sub commands: ls, mk, rm
+card() {
+    DEFAULT_BOARD=-1
+    DEFAULT_BOARD_NAME=''
+    DEFAULT_COLUMN_FILE=''
+    DEFAULT_COLUMN=-1
+    DEFAULT_COLUMN_NAME=''
+
+    if [ ! -f "$DEFAULT_BOARD_FILE" ]; then
+        echo "No active board selected."
+    else
+        DEFAULT_BOARD=$(cat "$DEFAULT_BOARD_FILE")
+
+        # Search for the board directory with the matching ID
+        for board in "$DECK_DIR"/*; do
+            if [ -d "$board" ] && [ -f "$board/.id" ]; then
+                local board_id=$(cat "$board/.id")
+                if [ "$board_id" = "$DEFAULT_BOARD" ]; then
+                    DEFAULT_BOARD_NAME=$(basename "$board")
+                    DEFAULT_COLUMN_FILE="$DECK_DIR/$DEFAULT_BOARD_NAME/.default"
+                    if [ ! -f "$DEFAULT_COLUMN_FILE" ]; then
+                        echo "No active column selected."
+                    else
+                        DEFAULT_COLUMN=$(cat "$DEFAULT_COLUMN_FILE")
+                        # Search for the column directory with the matching ID
+                        for column in "$DECK_DIR/$DEFAULT_BOARD_NAME"/*; do
+                            if [ -d "$column" ] && [ -f "$column/.id" ]; then
+                                local column_id=$(cat "$column/.id")
+                                if [ "$column_id" = "$DEFAULT_COLUMN" ]; then
+                                    DEFAULT_COLUMN_NAME=$(basename "$column")
+                                    DEFAULT_COLUMN_FILE="$DECK_DIR/$DEFAULT_BOARD_NAME/$DEFAULT_COLUMN_NAME/.default"
+                                fi
+                            fi
+                        done
+                    fi
+                fi
+            fi
+        done
+    fi
+
+    
+    # Include all .shcmd files from the current directory and collect commands.
+    for module_cmd_file in "$MODULES_PATH"/${FUNCNAME[0]}/*.shcmd; do
+        [ -e "$module_cmd_file" ] || continue  # Skip if no .shinc files exist
+        . "$module_cmd_file"
+    done
+
+    # Define the associative array with commands and their associated functions
+    local -A func_subcommands
+    # Create subcommands list dynamically
+    create_module_command_list func_subcommands "${FUNCNAME[0]}"
+
+    # Loop through the command arguments
+    if [[ -n "${func_subcommands[$1]}" ]]; then
+        # Call the corresponding function with any additional arguments
+        "${func_subcommands[$1]}" "${@:2}"
+        return $?
+    else
+        # Generate usage string based on available commands
+        local usage="Usage: git deck ${FUNCNAME[0]} {$(IFS='|'; echo "${!func_subcommands[*]}")}"        
+        echo "Invalid ${FUNCNAME[0]} command. $usage"
+        return 1
+    fi
+}

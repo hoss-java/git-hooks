@@ -1,0 +1,49 @@
+# Create a new column directory with a unique ID
+__column_mk() {
+    local return_value=1
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    if [ -z "$1" ]; then
+        echo "Error: No column name provided."
+        return 1
+    fi
+
+    local column_name=$1
+    # Check if the column with the same name already exists
+    if [ -d "$DECK_DIR/$DEFAULT_BOARD_NAME/$column_name" ]; then
+        echo "Error: A column with the name '$DEFAULT_BOARD_NAME/$column_name' already exists."
+        return 1
+    fi
+
+    # Scan for existing IDs in board directories
+    local existing_ids=$(find "$DECK_DIR/$DEFAULT_BOARD_NAME" -mindepth 1 -maxdepth 1 -type d -exec test -e '{}/.id' \; -print | \
+        xargs -I {} cat '{}/.id' 2>/dev/null | sort -n)
+
+    # Find the first available ID
+    local new_id=1
+    while echo "$existing_ids" | grep -q "^$new_id$"; do
+        new_id=$((new_id + 1))
+    done
+
+    # Ensure the ID is a three-digit number; max is 999
+    if [ "$new_id" -gt 9999 ]; then
+        echo "Error: Maximum number of columns (10000) reached."
+        return 1
+    fi
+
+    # Create the new board directory
+    mkdir -p "$DECK_DIR/$DEFAULT_BOARD_NAME/$column_name"
+    return_value=$?
+
+    if [ "$return_value" -eq 0 ]; then
+        # Create the .id file with the new board ID inside the board directory
+        echo "$new_id" > "$DECK_DIR/$DEFAULT_BOARD_NAME/$column_name/.id"
+
+        # Set the new board as the default selected board
+        echo "$new_id" > "$DEFAULT_COLUMN_FILE"
+        echo "Columns '$DEFAULT_BOARD_NAME/$column_name' created with ID '$new_id'."
+    fi
+    return $return_value
+}

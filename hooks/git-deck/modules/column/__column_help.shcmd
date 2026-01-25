@@ -1,0 +1,5 @@
+# cat column.help file
+__column_help() {
+    local column_help_file="$MODULES_PATH/column.help"
+    cat_help "$column_help_file"
+}

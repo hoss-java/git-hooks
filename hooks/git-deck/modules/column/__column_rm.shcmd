@@ -1,0 +1,71 @@
+# Remove a column directory and its cards from the currect default board
+__column_rm() {
+    local return_value=1
+
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    if [ -z "$1" ]; then
+        echo "Error: No column name provided."
+        return 1
+    fi
+
+    local column_name=$1
+    shift 1 # Shift past the first two parameters
+
+    # Default values for options
+    local option_remove='bin'
+    # Parse options using getopts
+    # Call the function and evaluate the output
+    local output=$(parse_options "remove" "r" "$@")
+    # Print options if the function executed successfully
+    if [[ $? -eq 0 ]]; then
+        eval "$output"  # Evaluate the options as variables
+        # Loop through the array and assign values to variables
+        for key in "${!options[@]}"; do
+            eval "$key=\"\${options[$key]}\""
+        done
+    else
+        return 1
+    fi
+
+    local column_dir="$DECK_DIR/$DEFAULT_BOARD_NAME/$column_name"
+
+    # Check if the column directory exists
+    if [ -d "$column_dir" ]; then
+        read -p "Are you sure you want to remove the card '$DEFAULT_BOARD_NAME/$column_name' ? (y/n): " answer
+
+        if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
+            # Read the ID from the .id file
+            if [ -f "$column_dir/.id" ]; then
+                local column_id=$(cat "$column_dir/.id")
+                if [ "$option_remove" == 'permanent' ]; then
+                    rm -r "$column_dir"
+                    return_value=$?
+                    echo "Column '$DEFAULT_BOARD_NAME/$column_name' with ID '$column_id' removed."
+                else
+                    local bin_folder="$DECK_DIR/$DEFAULT_BOARD_NAME/.bin/"
+                    if [ ! -d "$bin_folder" ]; then
+                        mkdir -p "$bin_folder"
+                    fi
+                    mv "$column_dir" "$s"
+                    return_value=$?
+                    [ "$return_value" -eq 0 ] && \
+                        echo "Column '$DEFAULT_BOARD_NAME/$column_name' with ID '$column_id' was moved to '$bin_folder'."
+                fi
+                # Check if this column was the default and reset it if necessary
+                if [ -f "$DEFAULT_COLUMN_FILE" ] && [ "$(cat "$DEFAULT_COLUMN_FILE")" = "$column_id" ]; then
+                    echo "Default column was deleted. No active column is selected."
+                    rm "$DEFAULT_COLUMN_FILE"
+                fi
+            else
+                echo "Error: No .id file found for column '$DEFAULT_BOARD_NAME/$column_name'."
+            fi
+        fi
+
+    else
+        echo "Error: Column '$DEFAULT_BOARD_NAME/$column_name' does not exist."
+    fi
+    return $return_value
+}

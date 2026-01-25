@@ -1,0 +1,68 @@
+# Remove a card from the current default board
+__card_rm() {
+    local return_value=1
+
+    ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
+        echo "Error: No board selected." && \
+        return 1
+
+    if [ -z "$1" ]; then
+        echo "Error: No card id provided."
+        return 1
+    fi
+
+    local card_id_name=$1
+    local card_id=$((10#$card_id_name))
+    shift 1 # Shift past the first two parameters
+
+    # Default values for options
+    local option_remove='bin'
+    # Parse options using getopts
+    # Call the function and evaluate the output
+    local output=$(parse_options "remove" "r" "$@")
+    # Print options if the function executed successfully
+    if [[ $? -eq 0 ]]; then
+        eval "$output"  # Evaluate the options as variables
+        # Loop through the array and assign values to variables
+        for key in "${!options[@]}"; do
+            eval "$key=\"\${options[$key]}\""
+        done
+    else
+        return 1
+    fi
+
+    for card in "$DECK_DIR"/$DEFAULT_BOARD_NAME/*/$(printf "%04d" "$card_id"); do
+        if [ -f "$card" ]; then
+            local card_name=$(basename "$card")
+            local card_path=$(dirname "$card")
+            local card_colunm=$(basename "$(dirname "$card")")
+
+            local bin_folder="$DECK_DIR/$DEFAULT_BOARD_NAME/.bin/$card_colunm"
+            local card_file_bin_folder="$bin_folder/$card_name"
+
+            #print card title/info
+            echo ">$(get_card_info "$card")"
+
+            read -p "Are you sure you want to remove the card '$DEFAULT_BOARD_NAME/$card_colunm/$(printf "%04d" "$card_id");' ? (y/n): " answer
+
+            if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
+                if [ "$option_remove" == 'permanent' ]; then
+                    rm "$card"
+                    return_value=$?
+                    echo "Card '$card_name' was removed."
+                else
+                    if [ ! -d "$bin_folder" ]; then
+                        mkdir -p "$bin_folder"
+                    fi
+                    mv "$card" "$card_file_bin_folder"
+                    return_value=$?
+                    echo "Card '$card_name' was moved to '$bin_folder'."
+                fi
+                break
+            fi            
+        else
+            echo "Error: No card with id '$card_id_name' found for board '$DEFAULT_BOARD_NAME'."
+        fi
+    done
+    return $return_value
+}

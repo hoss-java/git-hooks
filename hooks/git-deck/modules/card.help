@@ -72,3 +72,4 @@ The following commands are available for managing cards within a selected column
      ```
      git deck card cleanup
      ```
+

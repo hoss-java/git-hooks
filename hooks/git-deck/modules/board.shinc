@@ -1,0 +1,25 @@
+# Handling board sub commands: ls, mk, rm
+board() {
+    # Include all .shcmd files from the current directory and collect commands.
+    for module_cmd_file in "$MODULES_PATH"/${FUNCNAME[0]}/*.shcmd; do
+        [ -e "$module_cmd_file" ] || continue  # Skip if no .shinc files exist
+        . "$module_cmd_file"
+    done
+
+    # Define the associative array with commands and their associated functions
+    local -A func_subcommands
+    # Create subcommands list dynamically
+    create_module_command_list func_subcommands "${FUNCNAME[0]}"
+
+    # Loop through the command arguments
+    if [[ -n "${func_subcommands[$1]}" ]]; then
+        # Call the corresponding function with any additional arguments
+        "${func_subcommands[$1]}" "${@:2}"
+        return $?
+    else
+        # Generate usage string based on available commands
+        local usage="Usage: git deck ${FUNCNAME[0]} {$(IFS='|'; echo "${!func_subcommands[*]}")}"        
+        echo "Invalid ${FUNCNAME[0]} command. $usage"
+        return 1
+    fi
+}

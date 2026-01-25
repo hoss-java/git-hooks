@@ -1,0 +1,5 @@
+# cat board.help file
+__board_help() {
+    local board_help_file="$MODULES_PATH/board.help"
+    cat_help "$board_help_file"
+}

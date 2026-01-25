@@ -1,0 +1,40 @@
+# Initialize deck for a git folder
+__pm_initdeck() {
+    return_value=1
+    if [ -d "$DECK_DIR" ]; then
+        echo "Deck is already initialized at $DECK_DIR."
+    else
+        mkdir -p "$DECK_DIR"
+        echo "Initialized deck at $DECK_DIR."
+        return_value=0
+    fi
+    return $return_value
+}
+
+# Extract header
+extract_headers() {
+    local file="$1"
+    declare -A headers
+
+    header=$(awk '
+        BEGIN { in_header=0 }
+        /^---/ { 
+            in_header = 1 - in_header; 
+            if (in_header == 0) exit 
+            next
+        }
+        in_header && length($0) > 0 { print }
+    ' "$file")
+
+    while IFS= read -r line; do
+        if [[ ! -z "$line" ]]; then
+            key=$(echo "$line" | cut -d':' -f1 | xargs)
+            value=$(echo "$line" | cut -d':' -f2- | xargs)
+            if [[ -n "$key" ]]; then
+                headers["$key"]="$value"
+            fi
+        fi
+    done <<< "$header"
+
+    echo "$(declare -p headers)"
+}

@@ -1,38 +1,68 @@
 #!/bin/sh
+SCRIPT_ROOT="$(dirname "$0")"
+MODULES_PATH="$SCRIPT_ROOT/modules"
 
-# Initialize an array to hold command names.
-commands=()
+GIT_ROOT="$(git rev-parse --show-toplevel)"
+PM_DIR="$GIT_ROOT/.pm"
+DECK_DIR="$PM_DIR/deck"
+TEMPLATES_DIR="$GIT_ROOT/.pm/templates"
+DEFAULT_BOARD_FILE="$DECK_DIR/.default"
 
-# Include all .shinc files from the current directory and collect commands.
-for file in "$(dirname "$0")"/*.shinc; do
-    [ -e "$file" ] || continue  # Skip if no .shinc files exist
-    . "$file"
-
-    # Extract the base name of the file and add it to the commands array
-    command_name=$(basename "$file" .shinc)
-    commands+=("$command_name")
+# Include all share librariyes (.shinc) files from the current directory.
+for lib_file in "$SCRIPT_ROOT"/*.shinc; do
+    [ -e "$lib_file" ] || continue  # Skip if no .shinc files exist
+    . "$lib_file"
 done
 
-# Print help information for deck commands.
-print_help() {
-    echo "Usage: git deck {${commands[*]}|help}"
+# Initialize an array to hold command names.
+deck_commands=()
+# Include all .shinc files from the current directory and collect commands.
+for module_file in "$MODULES_PATH"/*.shinc; do
+    [ -e "$module_file" ] || continue  # Skip if no .shinc files exist
+    . "$module_file"
+
+    # Extract the base name of the module_file and add it to the commands array
+    deck_command_name=$(basename "$module_file" .shinc)
+    deck_commands+=("$deck_command_name")
+done
+
+deck_main(){    
+    deck_command_found=false  # Flag to track if command is found
+    case "$1" in
+        *)
+            for deck_cmd in "${deck_commands[@]}"; do
+                if [[ "$1" == "$deck_cmd" ]]; then
+                    deck_command_found=true
+                    local deck_hooks_output=""
+                    local deck_hooks_exit_code=0
+                    deck_hooks_output="$(deck_hooks "pre" "3" "$@")"
+                    deck_hooks_exit_code=$?
+                    if [ "$deck_hooks_exit_code" -ne 0 ]; then
+                        echo "$deck_hooks_output"
+                        return "$deck_hooks_exit_code"
+                    fi
+
+                    "$deck_cmd" "${@:2}"  # Call the corresponding function
+
+                    deck_hooks_output="$(deck_hooks "post" "3" "$@")"
+                    deck_hooks_exit_code=$?
+                    if [ "$deck_hooks_exit_code" -ne 0 ]; then
+                        echo "$deck_hooks_output"
+                        return "$deck_hooks_exit_code"
+                    fi
+                    break
+                fi
+            done
+
+            if ! $deck_command_found; then
+                echo "Invalid command: $1"  # Show invalid command
+                echo "Usage: git deck {${deck_commands[*]}|help}"
+            fi
+            ;;
+    esac
+    return 0
 }
 
 # Main entry point for the deck command.
-command_found=false  # Flag to track if command is found
-case "$1" in
-    *)
-        for cmd in "${commands[@]}"; do
-            if [[ "$1" == "$cmd" ]]; then
-                command_found=true
-                "$1" "${@:2}"  # Call the corresponding function
-                break
-            fi
-        done
-
-        if ! $command_found; then
-            echo "Invalid command: $1"  # Show invalid command
-            print_help
-        fi
-        ;;
-esac
+deck_main "$@"
+exit $?

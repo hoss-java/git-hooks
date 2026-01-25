@@ -1,0 +1,68 @@
+# Create a new board directory with a unique ID
+__board_mk() {
+    local return_value=1
+    if [ -z "$1" ]; then
+        echo "Error: No board name provided."
+        return 1
+    fi
+
+    # Check if the board with the same name already exists
+    if [ -d "$DECK_DIR/$1" ]; then
+        echo "Error: A board with the name '$1' already exists."
+        return 1
+    fi
+
+    local board_name="$1"
+    shift 1 # Shift past the first two parameters
+
+    # Default values for options
+    local option_template='default'
+    # Parse options using getopts
+    # Call the function and evaluate the output
+    local output=$(parse_options "template" "t" "$@")
+    # Print options if the function executed successfully
+    if [[ $? -eq 0 ]]; then
+        eval "$output"  # Evaluate the options as variables
+        # Loop through the array and assign values to variables
+        for key in "${!options[@]}"; do
+            eval "$key=\"\${options[$key]}\""
+        done
+    else
+        return 1
+    fi
+
+    # Scan for existing IDs in board directories
+    local existing_ids=$(find "$DECK_DIR" -mindepth 1 -maxdepth 1 -type d -exec test -e '{}/.id' \; -print | \
+        xargs -I {} cat '{}/.id' 2>/dev/null | sort -n)
+
+    # Find the first available ID
+    local new_id=1
+    while echo "$existing_ids" | grep -q "^$new_id$"; do
+        new_id=$((new_id + 1))
+    done
+
+    # Ensure the ID is a three-digit number; max is 999
+    if [ "$new_id" -gt 999 ]; then
+        echo "Error: Maximum number of boards (1000) reached."
+        return 1
+    fi
+
+    # Create the new board directory
+    mkdir -p "$DECK_DIR/$board_name"
+    # Copy templates to the board if it is available
+    local board_template=$TEMPLATES_DIR/board/$option_template
+    if [ -d "$board_template" ]; then
+        cp -r "$board_template/"{.,}* "$DECK_DIR/$board_name/"
+    fi
+
+    # Create the .id file with the new board ID inside the board directory
+    echo "$new_id" > "$DECK_DIR/$board_name/.id"
+    return_value=$?
+
+    # Set the new board as the default selected board
+    echo "$new_id" > "$DEFAULT_BOARD_FILE"
+
+    echo "Board '$board_name' created with ID '$new_id'."
+
+    return $return_value
+}
