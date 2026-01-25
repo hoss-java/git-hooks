@@ -156,10 +156,10 @@ gantt
 > # TODO:
 > - [x] 1. Add check cards' ID to git message hooks
 > - [x] 2. Add option to skip commit message format
-> - [ ] 3. Auto-complete for commit messages
+> - [x] 3. Auto-complete for commit messages
 > - [ ] 4. Auto add git-deck changes
 > - [ ] 5. Add auto-tag
-> - [ ] 6. Add other items to header (creator, user, date, start-time, done-time...)
+> - [x] 6. Add other items to header (creator, user, date, start-time, done-time...)
 > - [ ] 7. Auto time tracker
 > - [ ] 8. Plan to make it possible to use as Scrum board
 > - [x] 9. Add a flag to enable/disable adding changeId
