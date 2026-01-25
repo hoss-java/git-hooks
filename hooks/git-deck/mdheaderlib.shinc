@@ -53,7 +53,7 @@ extract_md_body() {
 get_card_info() {
     local card=$1
 
-    eval "$(extract_card_headers "$card")"
+    eval "$(extract_md_headers "$card")"
     # Access the headers with the returned associative array
     local card_title=''
     if [ ${#headers[@]} -eq 0 ]; then
