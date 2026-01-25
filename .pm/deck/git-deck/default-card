@@ -1,6 +1,15 @@
 ---
+#...
+# Git-deck card header
+# OBS! DON'T REMOVE CARD HEADERS
+#...
 Title: %TITLE%
 Tags:
+Creator:
+AssignedTo:
+# Time tracker settings
+tartAt:
+EndAt:
 ---
 
 # DOD (definition of done):

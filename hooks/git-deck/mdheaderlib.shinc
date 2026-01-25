@@ -29,6 +29,26 @@ extract_md_headers() {
     declare -p headers
 }
 
+# Function to extract git-deck cards' body
+extract_md_body() {
+    local file="$1"
+    # Get the content after the second ---
+    content=$(awk '
+        BEGIN { in_header=0; second_dash_found=0 }
+        /^---/ {
+            if (in_header) {
+                second_dash_found=1;
+                in_header=0;
+                next;
+            }
+            in_header=1;
+            next;
+        }
+        second_dash_found { print }
+    ' "$file")
+    echo -e "$content"
+}
+
 # Function to get card info
 get_card_info() {
     local card=$1

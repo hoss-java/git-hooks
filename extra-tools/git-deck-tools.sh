@@ -47,20 +47,22 @@ collect_options() {
 }
 
 # Function to extract git-deck cards' headers
-extract_card_headers() {
+extract_md_headers() {
     local file="$1"
     declare -A headers
 
+    # Extract the header into a variable, ignoring comment lines
     header=$(awk '
         BEGIN { in_header=0 }
-        /^---/ { 
-            in_header = 1 - in_header; 
-            if (in_header == 0) exit 
-            next
+        /^---/ {
+            in_header=1-in_header; 
+            if (in_header == 0) exit # Exit after the second ---
+            next # Skip the --- lines
         }
-        in_header && length($0) > 0 { print }
+        in_header && length($0) > 0 && !/^[[:space:]]*#/ { print }
     ' "$file")
 
+    # Process each line of the header
     while IFS= read -r line; do
         if [[ ! -z "$line" ]]; then
             key=$(echo "$line" | cut -d':' -f1 | xargs)
@@ -71,7 +73,8 @@ extract_card_headers() {
         fi
     done <<< "$header"
 
-    echo "$(declare -p headers)"
+    # Return the associative array
+    declare -p headers
 }
 # Wrapper function that passes all parameters to the main function
 extract_status_headers() {

@@ -5,7 +5,7 @@ MODULES_PATH="$SCRIPT_ROOT/modules"
 GIT_ROOT="$(git rev-parse --show-toplevel)"
 PM_DIR="$GIT_ROOT/.pm"
 DECK_DIR="$PM_DIR/deck"
-TEMPLATES_DIR="$GIT_ROOT/.pm/templates"
+TEMPLATES_DIR="$GIT_ROOT/.git/hooks/git-deck/templates"
 DEFAULT_BOARD_FILE="$DECK_DIR/.default"
 
 # Include all share librariyes (.shinc) files from the current directory.

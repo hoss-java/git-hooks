@@ -14,14 +14,14 @@ A new auto completion to help to find git commit title is added to to `git-deck-
 - [x] 2. Remove or Unify Repeated Blocks in `column`
 - [x] 3. Remove or Unify Repeated Blocks in `board`
 - [x] 4. Improve variable usages (local, global) in all code's files
-- [ ] 5. Add a new method to predicate args/params (will be used by `git-deck-completion`)
+- [x] 5. Add a new method to predicate args/params (will be used by `git-deck-completion`)
 - [x] 6. Update `deck` to support changes
 - [x] 7. Add a hook methods to support events' trapper
 - [x] 8. Organize file structure if it needs
 - [x] 9. Rename column status file to a more generic such as setting
 - [x] 10. add color to column settings
 - [x] 11. highlight active board/column and card with a color
-- [ ] 12. Update installer
+- [x] 12. Update installer
 
 # Reports:
 * Now commands are modular and can be added new commands more structured
