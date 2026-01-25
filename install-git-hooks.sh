@@ -39,7 +39,7 @@ esac
 
 # Copy hooks and git-deck to the Git root folder
 if [[ -d "$source_git_hooks_dir" ]]; then
-    cp -R "$source_git_hooks_dir/" "$target_git_hooks_dir/"
+    cp -R "$source_git_hooks_dir/"* "$target_git_hooks_dir/"
     echo "Copied hooks and git-deck to $target_git_hooks_dir"
     git config alias.deck '!bash .git/hooks/git-deck/deck'
     echo "git-deck command was registered."
