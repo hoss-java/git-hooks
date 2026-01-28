@@ -141,6 +141,22 @@ gantt
 > > * A file named `git-deck-completion.sh` is copied to the HOME folder of the current user and then the file is sourced via `.bashrc` and `.bash_profile`
 > </details>
 
+## 001-0007
+> **Improve installer to support add github action files.** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
+> <details >
+>     <summary>Details</summary>
+> The goal of this card is to improve the installer to support install github action files.
+> 
+> # DOD (definition of done):
+> The installer has an option to install/copy guthub action files to repos
+> 
+> # TODO:
+> - [ ] 1.
+> 
+> # Reports:
+> *
+> </details>
+
 ## 001-0005
 > **Connect git-deck and git hooks message.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
 > <details open>
@@ -194,4 +210,20 @@ gantt
 > >>git commit -m "my commit message without pattern" -m "--nochangeid" -m "--nochangeid"
 > >>```
 > * There was some challenge to update git hooks, git hooks are `sh` based not `bash` and many statements that work on bash do not work on `sh`. For example it took a while to find a solution to read a multi-lines variable line-by-line though a loop.
+> </details>
+
+## 001-0008
+> **Fix auto completion bug.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
+> <details open>
+>     <summary>Details</summary>
+> The goal of this card is to completion bugs.
+> 
+> # DOD (definition of done):
+> It works for both commit and deck.
+> 
+> # TODO:
+> - [ ] 1. Fix the conflict between commit and deck.
+> 
+> # Reports:
+> *
 > </details>
