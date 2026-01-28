@@ -17,7 +17,8 @@ The goal of this card is to completion bugs.
 It works for both commit and deck.
 
 # TODO:
-- [ ] 1. Fix the conflict between commit and deck.
+- [x] 1. Fix the conflict between commit and deck.
+- [ ] 2. Find out why only on git root , completions work
 
 # Reports:
 *
