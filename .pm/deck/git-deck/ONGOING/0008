@@ -1,0 +1,23 @@
+---
+#...
+# Git-deck card header
+# OBS! DON'T REMOVE CARD HEADERS
+#...
+Title: Fix auto completion bug.
+Tags:
+Creator:
+AssignedTo:
+# Time tracker settings
+tartAt:
+EndAt:
+---
+The goal of this card is to completion bugs.
+
+# DOD (definition of done):
+It works for both commit and deck.
+
+# TODO:
+- [ ] 1. Fix the conflict between commit and deck.
+
+# Reports:
+*

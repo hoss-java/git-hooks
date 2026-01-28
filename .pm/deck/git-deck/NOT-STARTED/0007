@@ -1,0 +1,23 @@
+---
+#...
+# Git-deck card header
+# OBS! DON'T REMOVE CARD HEADERS
+#...
+Title: Improve installer to support add github action files.
+Tags:
+Creator:
+AssignedTo:
+# Time tracker settings
+tartAt:
+EndAt:
+---
+The goal of this card is to improve the installer to support install github action files.
+
+# DOD (definition of done):
+The installer has an option to install/copy guthub action files to repos
+
+# TODO:
+- [ ] 1.
+
+# Reports:
+*
