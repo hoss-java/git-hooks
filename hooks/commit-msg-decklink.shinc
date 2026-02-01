@@ -9,6 +9,17 @@
 #
 # The script is developed to run from commit-msg as a git hook.
 #
+# Local variables:
+#  messagePattern
+#  messagePatternErrMsg
+#
+#  commit_msg_line1
+#  commit_msg_extralines
+#  commit_msg_line_count
+#
+#  deckLinkFlag
+#  gerritChangeIdFlag
+#  commitCheckFlag
 #
 # 2025 hossjava@osxx.com
 # Replace function using `sed` to replace all variables dynamically
@@ -33,8 +44,8 @@ replace_variables() {
 }
 
 # Add Deck card link to the message description
-commentStr=$(eval echo "$msgline1" | sed "s/.*]//")
-deckIdBlock=$(eval echo "$msgline1" | sed "s/$commentStr//g")
+commentStr=$(eval echo "$commit_msg_line1" | sed "s/.*]//")
+deckIdBlock=$(eval echo "$commit_msg_line1" | sed "s/$commentStr//g")
 deckIdStr=$(eval echo "$deckIdBlock" | sed -e 's/^.//' -e 's/.$//')
 
 if [ -n "$deckIdBlock" ] && [ -n "$deckIdStr" ]; then

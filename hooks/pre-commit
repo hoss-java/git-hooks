@@ -1,13 +1,30 @@
 #!/bin/sh
-SCRIPT_PATH=$(dirname `which $0`)
-CONF_LOCALPATH=${SCRIPT_PATH}/../../.commit-check
-CONF_PATH=${SCRIPT_PATH}/.commit-check
+GIT_ROOT="$(git rev-parse --show-toplevel)"
+GITHOOK_DEFAULT_COMMITCHECK="$GIT_ROOT/.commit-check"
+GITHOOK_DEFAULT_FILE="$GIT_ROOT/.gitdefault"
+
+#---------------------------------------
+# Import default settings and message formater
+if [ -f "$GITHOOK_DEFAULT_FILE" ]; then
+    . "$GITHOOK_DEFAULT_FILE"
+else
+    deckLinkFlag=false
+    gerritChangeIdFlag=true
+    commitCheckFlag=true
+fi
+
+COMMIT_MSG_DIRECTIVES_SHINC=.git/hooks/commit-msg-directives.shinc
+if [ -f "$COMMIT_MSG_DIRECTIVES_SHINC" ]; then
+    . ${COMMIT_MSG_DIRECTIVES_SHINC}
+fi
+#---------------------------------------
 
 exitcode=0
-
-if [ -f "$CONF_LOCALPATH" ]; then
-	. ${CONF_LOCALPATH}
-else
-	echo "No check has been defined!"
+if [ "$commitCheckFlag" = true ]; then
+    if [ -f "$GITHOOK_DEFAULT_COMMITCHECK" ]; then
+	    . ${GITHOOK_DEFAULT_COMMITCHECK}
+    else
+	    echo "No check has been defined!"
+    fi
 fi
 exit $exitcode

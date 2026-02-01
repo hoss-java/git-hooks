@@ -1,0 +1,61 @@
+#
+# File name : commit-msg-directives.shinc
+# Used by commit-msg and pre-commit
+#
+# Description :
+# -----------------------------------------------------
+# Check commit message sent by git and collect directives from the messages
+#
+# The script is developed to run from commit-msg/pre-commit as a git hook.
+#
+# Local variables:
+#  messagePattern
+#  messagePatternErrMsg
+#
+#  deckLinkFlag
+#  gerritChangeIdFlag
+#  commitCheckFlag
+#
+# 2025 hossjava@osxx.com
+commit_msg_line1=$(head -1 "$1")  # Get the first line
+# Get all lines starting from the third line (line 3 and onwards)
+commit_msg_extralines="$(sed -n '3,$p' "$1")"  # Get all lines from line 3
+# Check the number of extra lines
+commit_msg_line_count="$(echo "$extralines" | wc -l)"
+
+# Check if there are any extra lines to process
+if [ "$commit_msg_line_count" -gt 0 ] && [ -n "$(echo "$commit_msg_extralines" | sed '/^[[:space:]]*$/d; s/[[:space:]]\+$//')" ]; then
+    echo "Check for directives ..."
+
+    # Loop over the remaining extra lines starting from the second extra line
+    for i in $(seq "3" "$((3 + commit_msg_line_count))"); do
+        line="$(sed -n "${i}p" "$1")"
+    #for line in "$(echo "$commit_msg_extralines" | awk '{print $0}')"; do
+        # Check if the line starts with -- (indicating a directive)
+        if [ "$(expr substr "$line" 1 2)" = "--" ]; then
+            directive="$(echo "$line" | awk '{print $1}')"  # Get the directive name (first part)
+            params="$(echo "$line" | awk '{if (NF > 1) print substr($0, index($0,$2)); else print ""}')" # Get the rest of the line as parameters
+
+            case "$directive" in
+                "--nocheck")
+                    echo "directive: --nocheck. Skipping checks, no deck link is added to the commit."
+                    deckLinkFlag=false
+                    ;;
+                "--nochangeid")
+                    echo "directive: --nochangeid. Skipping creating change-ID, no change-ID is added to the commit."
+                    gerritChangeIdFlag=false
+                    ;;
+                "--notest")
+                    echo "directive: --notest. Skipping tests and commit checks."
+                    commitCheckFlag=false
+                    ;;
+                # Add more cases for additional commands as needed
+                *)
+                    echo "Unknown directive: $directive with parameters: '${params}'."
+                    deckLinkFlag=false
+                    commitCheckFlag=false
+                    ;;
+            esac
+        fi
+    done
+fi

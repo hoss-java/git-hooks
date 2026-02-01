@@ -35,7 +35,7 @@ if test ! -f "$1" ; then
 fi
 
 #---------------------------------------
-# Import msg formatter
+# Import default settings and message formater
 GIT_ROOT="$(git rev-parse --show-toplevel)"
 GITHOOK_DEFAULT_FILE="$GIT_ROOT/.gitdefault"
 if [ -f "$GITHOOK_DEFAULT_FILE" ]; then
@@ -43,11 +43,17 @@ if [ -f "$GITHOOK_DEFAULT_FILE" ]; then
 else
     deckLinkFlag=false
     gerritChangeIdFlag=true
+    commitCheckFlag=true
 fi
 
-COMMIT_MSG_FORMAT_SHINC=.git/hooks/commit-msg-format.shinc
-if [ -f "$COMMIT_MSG_FORMAT_SHINC" ]; then
-    . ${COMMIT_MSG_FORMAT_SHINC}
+COMMIT_MSG_DIRECTIVES_SHINC=.git/hooks/commit-msg-directives.shinc
+if [ -f "$COMMIT_MSG_DIRECTIVES_SHINC" ]; then
+    . ${COMMIT_MSG_DIRECTIVES_SHINC}
+
+    COMMIT_MSG_FORMAT_SHINC=.git/hooks/commit-msg-format.shinc
+    if [ -f "$COMMIT_MSG_FORMAT_SHINC" ]; then
+        . ${COMMIT_MSG_FORMAT_SHINC}
+    fi
 fi
 #---------------------------------------
 
