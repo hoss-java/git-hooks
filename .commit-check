@@ -17,8 +17,9 @@
 # update runner ('ccrun') to the repo runner
 #COMMITCHECK_RUNNER=ccrun
 #if [ -f "$GIT_ROOT/$COMMITCHECK_RUNNER" ]; then
-#    bash -c "source $GIT_ROOT/$COMMITCHECK_RUNNER && ccrun checkattrib -gitcommit" \
-#    && exitcode=0
+#    bash -c "source $GIT_ROOT/$COMMITCHECK_RUNNER \
+#       && ccrun checkattrib -gitcommit" \
+#    && exitcode=$?
 #else
 #    exitcode=1
 #fi

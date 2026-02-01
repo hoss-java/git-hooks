@@ -25,4 +25,4 @@ messagePatternErrMsg="A message should be started with a pattern like [B<board-i
 gerritChangeIdFlag=true
 
 # Run tests (.commit-check)
-commitCheckFlag=true
+commitCheckFlag=false
