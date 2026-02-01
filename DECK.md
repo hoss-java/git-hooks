@@ -228,3 +228,23 @@ gantt
 > # Reports:
 > *
 > </details>
+
+## 001-0009
+> **Improve git hooks** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
+> <details open>
+>     <summary>Details</summary>
+> The goal of this card is to improve Git hooks by separating the directives collector from the message formatter.
+> 
+> # DOD (definition of done):
+> Directives collector has its own script.
+> All hooks and scripts are updated to use the new Directives collector.
+> 
+> # TODO:
+> - [x] 1. Move Directives collector from commit-msg-format.shinc to a new shinc (commit-msg-directives.shinc)
+> - [x] 2. Update commit-msg-format.shinc and commit-msg to use commit-msg-directives.shinc
+> - [x] 3. Add this system to other hooks such as pre-commit
+> - [x] 4. Update other files/script if needed
+> 
+> # Reports:
+> *
+> </details>
