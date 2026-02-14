@@ -112,12 +112,24 @@ jobs:
       - name: Copy and Push Changes
         if: env.file_changed == 'true' && success()  # Only run if tests passed
         run: |
+          #set -x
           git checkout ${TARGET_BRANCH}
+
+          changes_made=false
           for file in ${FILES_TO_CHECK}; do
-            git checkout ${SOURCE_BRANCH} -- "$file"
+            if git checkout ${SOURCE_BRANCH} -- "$file"; then
+              changes_made=true
+            fi
           done
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add .
-          git commit -m "[AUTO-GENERATE] Auto-mainmerge from ${SOURCE_BRANCH} to ${TARGET_BRANCH}"
-          git push origin ${TARGET_BRANCH}
+
+          # Check if any file was modified
+          if [[ "$(git status --porcelain)" ]]; then
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add .
+            git commit -m "[AUTO-GENERATE] Auto-merge from ${SOURCE_BRANCH} to ${TARGET_BRANCH}"
+            git push origin ${TARGET_BRANCH}
+          else
+            echo "No changes to push"
+            exit 0  # Return 0 if there are no changes
+          fi
