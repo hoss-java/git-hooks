@@ -12,23 +12,23 @@ __column_rm() {
     fi
 
     local column_name=$1
-    shift 1 # Shift past the first two parameters
+    shift 1
 
     # Default values for options
     local option_remove='bin'
-    # Parse options using getopts
-    # Call the function and evaluate the output
-    local output=$(parse_options "remove" "r" "$@")
-    # Print options if the function executed successfully
-    if [[ $? -eq 0 ]]; then
-        eval "$output"  # Evaluate the options as variables
-        # Loop through the array and assign values to variables
-        for key in "${!options[@]}"; do
-            eval "$key=\"\${options[$key]}\""
-        done
-    else
-        return 1
-    fi
+    
+    # Manual option parsing - handles any order
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -r|--remove)
+                option_remove="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
 
     local column_dir="$DECK_DIR/$DEFAULT_BOARD_NAME/$column_name"
 
@@ -49,7 +49,7 @@ __column_rm() {
                     if [ ! -d "$bin_folder" ]; then
                         mkdir -p "$bin_folder"
                     fi
-                    mv "$column_dir" "$s"
+                    mv "$column_dir" "$bin_folder"
                     return_value=$?
                     [ "$return_value" -eq 0 ] && \
                         echo "Column '$DEFAULT_BOARD_NAME/$column_name' with ID '$column_id' was moved to '$bin_folder'."

@@ -1,9 +1,6 @@
 # Create a new card on the current default column of the selected board
 __card_mk() {
     local return_value=1
-    # Open/Create the new card at <default-board>/<default-column>
-    local default_editor=nano
-    local editor=${editor:-$default_editor}
 
     ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
         echo "Error: No board selected." && \
@@ -17,7 +14,25 @@ __card_mk() {
         echo "Error: No card title provided."
         return $return_value
     fi
+
     local card_title="$1"
+    shift 1
+
+    # Default values for options
+    local option_editor="nano"
+    
+    # Manual option parsing - handles any order
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -e|--editor)
+                option_editor="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
 
     local search_output
     search_output=$(__card_find "title=$card_title" --output notitle --match full)
@@ -29,7 +44,7 @@ __card_mk() {
         read -p "Do you want to Edit it instead to create a new one? (y/n): " answer
 
         if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
-            $default_editor $DECK_DIR/$first_line
+            $option_editor "$DECK_DIR/$first_line"
             return_value=$?
             return $return_value
         fi
@@ -45,7 +60,7 @@ __card_mk() {
         new_id=$((new_id + 1))
     done
 
-    # Ensure the ID is a three-digit number; max is 999
+    # Ensure the ID is a four-digit number; max is 9999
     if [ "$new_id" -gt 9999 ]; then
         echo "Error: Maximum number of cards (10000) reached."
         return $return_value
@@ -67,7 +82,7 @@ __card_mk() {
         } > "$new_card_file"
     fi
 
-    $default_editor $new_card_file
+    $option_editor "$new_card_file"
     return_value=$?
     return $return_value
 }

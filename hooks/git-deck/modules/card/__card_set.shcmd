@@ -13,6 +13,24 @@ __card_set() {
 
     local card_id_name=$1
     local card_id=$((10#$card_id_name))
+    shift 1
+
+    # Default values for options
+    local option_force="false"
+    
+    # Manual option parsing - handles any order
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -f|--force)
+                option_force="true"
+                shift 1
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+
     for card in "$DECK_DIR"/$DEFAULT_BOARD_NAME/*/$(printf "%04d" "$card_id"); do
         if [ -f "$card" ]; then
             local card_name=$(basename "$card")

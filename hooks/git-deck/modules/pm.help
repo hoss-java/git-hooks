@@ -1,12 +1,12 @@
 # Git-Deck Project Management Help File
 
 ## Overview
-The `pm` function manages project management features within a Git repository. It initializes a project management structure, allows for editing, and creates a deck of cards. The command supports various subcommands, including help, initialization, and management.
+The `pm` function manages project management features within a Git repository. It initializes a project management structure, allows for editing, creates a deck of cards, and generates project reports. The command supports various subcommands, including help, initialization, management, and reporting.
 
 ## Function Usage
 
 ### Command Format
-git deck pm {help|initpm|editpm|initdeck|createdeck}
+git deck pm {help|initpm|editpm|initdeck|createdeck|report}
 
 
 ### Subcommands
@@ -40,6 +40,21 @@ Creates or updates the `DECK.md` file based on the existing cards and boards.
 
 - **Usage**: `git deck pm createdeck`
 
+#### 6. report
+Generates a project report showing timeline, card status, and commit activity for the current board.
+
+- **Usage**: `git deck pm report [OPTIONS]`
+- **Options**:
+  - `-t, --type <type>`: Specifies the report type (default is 'full').
+    - `full`: Displays both detailed cards activity and project overview
+    - `summary`: Displays only the project overview with timeline and statistics
+- **Output Includes**:
+  - **Timeline**: Project start and end dates with total duration in days
+  - **Cards Status**: Breakdown of done, ongoing, and not started cards with percentages
+  - **Commits**: Total commits and breakdown by card status
+  - **Details** (full mode only): Table of individual cards with their titles, time spent, and commit counts
+  - **Column Breakdown** (full mode only): Card count per column
+
 ---
 
 ## Detailed Behavior
@@ -56,7 +71,21 @@ The `initdeck` command initializes the deck directory. If it already exists, a m
 ### Creating the Deck File
 The `createdeck` function compiles information from each board, column, and card into a `DECK.md` file formatted as Markdown. It extracts headers and other metadata from the cards, organizes them, and writes to the output file.
 
+### Generating Project Reports
+The `report` command analyzes all cards in the current board and generates a comprehensive project report:
+
+- **Summary Mode**: Shows high-level project metrics including timeline, card completion status, and commit statistics.
+- **Full Mode**: Includes all summary information plus detailed activity tables showing individual card progress and column distribution.
+
+The report automatically calculates:
+- Project duration based on card creation and completion dates
+- Completion percentages for each card status
+- Total commits across all cards and broken down by status
+
 ---
 
 ## Getting Help
 If at any point you need assistance, you can display this help file by running:
+
+```bash
+git deck pm help

@@ -1,0 +1,159 @@
+# Report for a git folder
+__pm_report() {
+    local return_value=1
+
+    # Default values for options
+    local option_type='full'
+
+    # Manual option parsing - handles any order
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -t|--type)
+                option_type="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    DEFAULT_BOARD_NAME=$(git deck board get)
+    [ -z "$DEFAULT_BOARD_NAME" ] && \
+        echo "Error: No board selected." && \
+        return 1
+
+    # Get cards data once
+    local cards_data=$(git deck card detail --format plain)
+    [ -z "$cards_data" ] && \
+        echo "Error: No cards found." && \
+        return 1
+
+    # Parse data once
+    local total_cards=0
+    local done_cards=0
+    local ongoing_cards=0
+    local not_started_cards=0
+    local total_commits=0
+    local done_commits=0
+    local ongoing_commits=0
+    local project_start_date=""
+    local project_end_date=""
+    declare -A column_counts
+    declare -a card_list
+
+    while IFS='|' read -r card title column status created start done time commits; do
+        card=$(echo "$card" | xargs)
+        title=$(echo "$title" | xargs)
+        column=$(echo "$column" | xargs)
+        status=$(echo "$status" | xargs)
+        created=$(echo "$created" | xargs)
+        start=$(echo "$start" | xargs)
+        done=$(echo "$done" | xargs)
+        time=$(echo "$time" | xargs)
+        commits=$(echo "$commits" | xargs)
+
+        total_cards=$((total_cards + 1))
+        column_counts["$column"]=$((${column_counts["$column"]:-0} + 1))
+
+        # Set project timeline
+        if [ -z "$project_start_date" ] || [[ "$created" < "$project_start_date" ]]; then
+            project_start_date="$created"
+        fi
+
+        case "$status" in
+            DONE)
+                done_cards=$((done_cards + 1))
+                if [ -z "$project_end_date" ] || [[ "$done" > "$project_end_date" ]]; then
+                    project_end_date="$done"
+                fi
+                if [[ "$commits" =~ ^[0-9]+$ ]]; then
+                    done_commits=$((done_commits + commits))
+                fi
+                ;;
+            START)
+                ongoing_cards=$((ongoing_cards + 1))
+                if [[ "$commits" =~ ^[0-9]+$ ]]; then
+                    ongoing_commits=$((ongoing_commits + commits))
+                fi
+                ;;
+            NA)
+                not_started_cards=$((not_started_cards + 1))
+                ;;
+        esac
+
+        if [[ "$commits" =~ ^[0-9]+$ ]]; then
+            total_commits=$((total_commits + commits))
+        fi
+
+        card_list+=("$card|$title|$column|$status|$time|$commits")
+    done <<< "$cards_data"
+
+    # Calculate project duration
+    if [ -n "$project_start_date" ] && [ -n "$project_end_date" ]; then
+        local start_epoch=$(date -d "$project_start_date" +%s 2>/dev/null || echo 0)
+        local end_epoch=$(date -d "$project_end_date" +%s 2>/dev/null || echo 0)
+        local duration_seconds=$((end_epoch - start_epoch))
+        local project_days=$((duration_seconds / 86400))
+    else
+        local project_days=0
+    fi
+
+    # Overview Report
+    __report_overview() {
+        echo "Timeline: $project_start_date → $project_end_date ($project_days days)"
+        echo ""
+        echo "Cards Status:"
+        printf "  ✓ Done:        %2d / %2d  (%3d%%)\n" "$done_cards" "$total_cards" "$(( done_cards * 100 / total_cards ))"
+        printf "  ⚙ Ongoing:     %2d / %2d  (%3d%%)\n" "$ongoing_cards" "$total_cards" "$(( ongoing_cards * 100 / total_cards ))"
+        printf "  ○ Not Started: %2d / %2d  (%3d%%)\n" "$not_started_cards" "$total_cards" "$(( not_started_cards * 100 / total_cards ))"
+        echo ""
+        echo "Commits:"
+        printf "  Total:   %d commits\n" "$total_commits"
+        printf "  Done:    %d commits\n" "$done_commits"
+        printf "  Ongoing: %d commits\n" "$ongoing_commits"
+        echo ""
+    }
+
+    # Details Report
+    __report_details() {
+        echo "CARDS ACTIVITY"
+        echo ""
+        printf "%-6s | %-35s | %8s | %s\n" "Card" "Title" "Time" "Commits"
+        printf "%-6s | %-35s | %8s | %s\n" "------" "---------------------------------" "--------" "-------"
+        
+        for entry in "${card_list[@]}"; do
+            IFS='|' read -r card title column status time commits <<< "$entry"
+            printf "%-6s | %-35s | %8s | %s\n" "$card" "${title:0:35}" "$time" "$commits"
+        done | sort -k1
+        echo ""
+
+        echo "COLUMN BREAKDOWN"
+        echo ""
+        for col in "${!column_counts[@]}"; do
+            printf "  %-20s: %2d cards\n" "$col" "${column_counts[$col]}"
+        done | sort
+        echo ""
+    }
+
+    # Display reports
+    echo "PROJECT: $DEFAULT_BOARD_NAME"
+    echo ""
+
+    case "$option_type" in
+        summary)
+            __report_overview
+            return_value=0
+            ;;
+        full)
+            __report_details
+            __report_overview
+            return_value=0
+            ;;
+        *)
+            return_value=1
+            ;;
+    esac
+
+    return $return_value
+}

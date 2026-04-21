@@ -6,98 +6,165 @@ __card__completion(){
     prev_word="${_COMP_WORDS[_COMP_CWORD-1]}"
     command_name="${_COMP_WORDS[1]}"
 
+    # Get the Git root directory
+    local git_root
+    git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+
     # Create a copy of the array removing items that start with '_'
     if [[ "$_COMP_CWORD" -eq 3 ]]; then
-        # Define second-level commands for "git deck board"
         local filtered_commands=($(printf "%s\n" "${!func_subcommands[@]}" | grep -v '^_'))
         echo "${filtered_commands[*]}"
         return
     fi
 
-    # Get the Git root directory
-    local git_root
-    git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+    # Internal helper function for parameter completion
+    __param_completion() {
+        local cmd="$1"
+        shift
+        declare -A param_values
+        while [[ $# -gt 1 ]]; do
+            param_values["$1"]="$2"
+            shift 2
+        done
+        
+        local used_params=()
+        for ((i=4; i<_COMP_CWORD; i++)); do
+            if [[ "${_COMP_WORDS[i]}" == --* ]] || [[ "${_COMP_WORDS[i]}" == -* ]]; then
+                used_params+=("${_COMP_WORDS[i]}")
+            fi
+        done
+        
+        if [[ ! "$prev_word" =~ ^- ]]; then
+            local available_options=()
+            for param in "${!param_values[@]}"; do
+                local skip=0
+                for used in "${used_params[@]}"; do
+                    if [[ "$param" == "$used" ]]; then
+                        skip=1
+                        break
+                    fi
+                    if [[ "$param" == "--"* && "$used" == "-"* ]] || [[ "$param" == "-"* && "$used" == "--"* ]]; then
+                        if [[ "${param:2}" == "${used:1}" ]]; then
+                            skip=1
+                            break
+                        fi
+                    fi
+                done
+                [[ $skip -eq 0 ]] && available_options+=("$param")
+            done
+            echo "${available_options[@]}"
+        else
+            echo "${param_values[$prev_word]}"
+        fi
+    }
 
-    # Autocompletion for 'set' command
-    if [[ "${_COMP_WORDS[3]}" == "edit"  || "${_COMP_WORDS[3]}" == "cat" || \
-        "${_COMP_WORDS[3]}" == "set" ]]; then
-        # If we successfully obtained the git root, proceed
+    # Internal helper function for positional completion
+    __positional_completion() {
+        local cmd="$1"
+        local position="$2"
+        shift 2
+        declare -A completions
+        while [[ $# -gt 1 ]]; do
+            completions["$1"]="$2"
+            shift 2
+        done
+        
+        echo "${completions[$position]}"
+    }
+
+    # Internal helper function for dynamic parameter completion
+    __dynamic_param_completion() {
+        local cmd="$1"
+        local position="$2"
+        shift 2
+        declare -A position_data
+        while [[ $# -gt 1 ]]; do
+            position_data["$1"]="$2"
+            shift 2
+        done
+        
+        if [[ "$_COMP_CWORD" -eq "$position" ]]; then
+            echo "${position_data[$position]}"
+        fi
+    }
+
+    # Autocompletion for 'ls' command
+    if [[ "${_COMP_WORDS[3]}" == "ls" ]]; then
+        __param_completion "ls" \
+            "--output" "full short commitid titleonly notitle" \
+            "-o" "full short commitid titleonly notitle" \
+            "--column" "$(git deck column ls --output name)" \
+            "-c" "$(git deck column ls --output name)" \
+            "--type" "$(git deck column detail --output type | sort -u)" \
+            "-t" "$(git deck column detail --output type | sort -u)"
+        return
+    fi
+
+    # Autocompletion for 'detail' command
+    if [[ "${_COMP_WORDS[3]}" == "detail" ]]; then
+        __param_completion "detail" \
+            "--output" "full status created ongoing done timespent commits title" \
+            "-o" "full status created ongoing done timespent commits title" \
+            "--column" "$(git deck column ls --output name)" \
+            "-c" "$(git deck column ls --output name)" \
+            "--type" "$(git deck column detail --output type | sort -u)" \
+            "-t" "$(git deck column detail --output type | sort -u)" \
+            "--format" "plain yaml json screen text" \
+            "-f" "plain yaml json screen text"
+        return
+    fi
+
+    # Autocompletion for 'find' command
+    if [[ "${_COMP_WORDS[3]}" == "find" ]]; then
+        __param_completion "find" \
+            "--output" "full short notitle titleonly commitmsg" \
+            "-o" "full short notitle titleonly commitmsg" \
+            "--match" "partial" \
+            "-m" "partial"
+        return
+    fi
+
+    # Autocompletion for 'edit', 'cat', 'set' commands
+    if [[ "${_COMP_WORDS[3]}" == "edit" ]] || [[ "${_COMP_WORDS[3]}" == "cat" ]] || [[ "${_COMP_WORDS[3]}" == "set" ]]; then
         if [[ -d "${git_root}/.pm/deck" ]]; then
-            # List existing cars directories in .pm/deck
             local cards
             cards=$(git deck card ls --output short)
-            echo "${cards}"
+            __dynamic_param_completion "${_COMP_WORDS[3]}" 4 \
+                4 "${cards}"
         fi
         return
     fi
 
-    # Autocompletion for 'set' command
-    if [[ "${_COMP_WORDS[3]}" == "find" ]]; then
-        if [[ ("$_COMP_CWORD" -eq 5) || ("$_COMP_CWORD" -eq 7) ]]; then
-            # If we successfully obtained the git root, proceed
-            local card_options=("--output" "-o" "--match" "-m")
-            echo "${card_options[@]}"
-        elif [[ ("$_COMP_CWORD" -eq 6) || ("$_COMP_CWORD" -eq 8) ]]; then
-            # If we successfully obtained the git root, proceed
-            local card_options=""
-            if [ "$prev_word" == "--output" ] || [ "$prev_word" == "-o" ];then
-                card_options=("full" "short" "notitle" "titleonly" "commitmsg")
-            elif [ "$prev_word" == "--match" ] || [ "$prev_word" == "-m" ];then
-                card_options=("partial")
-            fi            
-            echo "${card_options[@]}"
-        fi
-        return
-    fi
-
-    # Autocompletion for 'set' command
-    if [[ "${_COMP_WORDS[3]}" == "ls" ]]; then
-        if [[ ("$_COMP_CWORD" -eq 4) || ("$_COMP_CWORD" -eq 6) ]]; then
-            # If we successfully obtained the git root, proceed
-            local card_options=("--output" "-o" "--column" "-c")
-            echo "${card_options[@]}"
-        elif [[ ("$_COMP_CWORD" -eq 5) || ("$_COMP_CWORD" -eq 7) ]]; then
-            # If we successfully obtained the git root, proceed
-            local column_card_options=""
-            if [ "$prev_word" == "--output" ] || [ "$prev_word" == "-o" ];then
-                column_card_options=("full" "short" "notitle" "titleonly" "commitmsg")
-            elif [ "$prev_word" == "--column" ] || [ "$prev_word" == "-c" ];then
-                column_card_options=$(git deck column ls --output name)
-            fi            
-            echo "${column_card_options[@]}"
-        fi
-        return
-    fi
-
-    # Autocompletion for 'set' command
+    # Autocompletion for 'rm' command
     if [[ "${_COMP_WORDS[3]}" == "rm" ]]; then
-        if [[ ("$_COMP_CWORD" -eq 4) ]]; then
+        if [[ "$_COMP_CWORD" -eq 4 ]]; then
             if [[ -d "${git_root}/.pm/deck" ]]; then
                 local cards
                 cards=$(git deck card ls --output short)
-                echo "${cards}"
+                __dynamic_param_completion "rm" 4 \
+                    4 "${cards}"
             fi
-        elif [[ ("$_COMP_CWORD" -eq 5) ]]; then
-            local card_options=("--remove" "-r")
-            echo "${card_options[*]}"
-        elif [[ ("$_COMP_CWORD" -eq 6) ]]; then
-            local card_option_params=("permanent" )
-            echo "${card_option_params[*]}"
+        else
+            __positional_completion "rm" "$_COMP_CWORD" \
+                5 "--remove -r" \
+                6 "permanent"
         fi
         return
     fi
 
-    # Autocompletion for 'set' command
+    # Autocompletion for 'mv' command
     if [[ "${_COMP_WORDS[3]}" == "mv" ]]; then
         if [[ -d "${git_root}/.pm/deck" ]]; then
             if [[ "$_COMP_CWORD" -eq 4 ]]; then
                 local cards
                 cards=$(git deck card ls --output short)
-                echo "${cards}"
+                __dynamic_param_completion "mv" 4 \
+                    4 "${cards}"
             elif [[ "$_COMP_CWORD" -eq 5 ]]; then
                 local columns
                 columns=$(git deck column ls --output name)
-                echo "${columns}"
+                __dynamic_param_completion "mv" 5 \
+                    5 "${columns}"
             fi
         fi
         return

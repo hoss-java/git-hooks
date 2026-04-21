@@ -12,26 +12,30 @@ __card_find() {
     fi
 
     local search_string="$1"
-    shift 1 # Shift past the first two parameters
+    shift 1
 
     eval $(split_string "$search_string")
 
     # Default values for options
     local option_output='full'
     local option_match='partial'
-    # Parse options using getopts
-    # Call the function and evaluate the output
-    local output=$(parse_options "output:match" "o:m" "$@")
-    # Print options if the function executed successfully
-    if [[ $? -eq 0 ]]; then
-        eval "$output"  # Evaluate the options as variables
-        # Loop through the array and assign values to variables
-        for key in "${!options[@]}"; do
-            eval "$key=\"\${options[$key]}\""
-        done
-    else
-        return 1
-    fi
+    
+    # Manual option parsing - handles any order
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -o|--output)
+                option_output="$2"
+                shift 2
+                ;;
+            -m|--match)
+                option_match="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
 
     if [ "$option_output" == 'full' ]; then
         echo "Found cards:"
