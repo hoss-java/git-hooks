@@ -141,6 +141,26 @@ gantt
 > > * A file named `git-deck-completion.sh` is copied to the HOME folder of the current user and then the file is sourced via `.bashrc` and `.bash_profile`
 > </details>
 
+## 001-0008
+> **Fix auto completion bug.** ![status](https://img.shields.io/badge/status-DONE-brightgreen)
+> <details >
+>     <summary>Details</summary>
+> The goal of this card is to completion bugs.
+> 
+> # DOD (definition of done):
+> It works for both commit and deck.
+> 
+> # TODO:
+> - [x] 1. Fix the conflict between commit and deck.
+> - [x] 2. Find out why only on git root , completions work
+> 
+> # Reports:
+> * **Issue Found:** Double completion registrations were causing conflicts. The completion function was registered multiple times for the same commands, preventing proper execution in subdirectories.
+> * **Root Cause:** Duplicate `complete -F _git_deck_completion` statements in the script were overriding each other, causing the completion to fail outside the git root directory.
+> * **Solution:** Removed duplicate registrations, keeping only one registration per command (`git` and `deck`).
+> * **Result:** Completion now works consistently across all subdirectories within the git repository.
+> </details>
+
 ## 001-0010
 > **Move main to develop branch** ![status](https://img.shields.io/badge/status-DONE-brightgreen)
 > <details >
@@ -267,23 +287,6 @@ gantt
 > - [x] 2. Update commit-msg-format.shinc and commit-msg to use commit-msg-directives.shinc
 > - [x] 3. Add this system to other hooks such as pre-commit
 > - [x] 4. Update other files/script if needed
-> 
-> # Reports:
-> *
-> </details>
-
-## 001-0008
-> **Fix auto completion bug.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
-> <details open>
->     <summary>Details</summary>
-> The goal of this card is to completion bugs.
-> 
-> # DOD (definition of done):
-> It works for both commit and deck.
-> 
-> # TODO:
-> - [x] 1. Fix the conflict between commit and deck.
-> - [ ] 2. Find out why only on git root , completions work
 > 
 > # Reports:
 > *
