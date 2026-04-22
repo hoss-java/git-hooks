@@ -1,0 +1,27 @@
+---
+#...
+# Git-deck card header
+# OBS! DON'T REMOVE CARD HEADERS
+#...
+Title: Implement pm reports.
+Tags:
+Creator:
+AssignedTo:
+# Time tracker settings
+tartAt:
+EndAt:
+---
+
+# DOD (definition of done):
+
+# TODO:
+- [x] 1. Adding detail sub command to column
+- [x] 2. Improve ls sub command for column
+- [x] 3. Improve completion for column
+- [x] 4. Improve ls sub command for card
+- [x] 5. adding detail sub command to card
+- [x] 6. Improve completion for card
+- [x] 3. improve completion
+
+# Reports:
+*
