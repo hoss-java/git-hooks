@@ -1,0 +1,28 @@
+---
+#...
+# Git-deck card header
+# OBS! DON'T REMOVE CARD HEADERS
+#...
+Title: Fix auto completion bug.
+Tags:
+Creator:
+AssignedTo:
+# Time tracker settings
+tartAt:
+EndAt:
+---
+The goal of this card is to completion bugs.
+
+# DOD (definition of done):
+It works for both commit and deck.
+
+# TODO:
+- [x] 1. Fix the conflict between commit and deck.
+- [x] 2. Find out why only on git root , completions work
+
+# Reports:
+* **Issue Found:** Double completion registrations were causing conflicts. The completion function was registered multiple times for the same commands, preventing proper execution in subdirectories.
+* **Root Cause:** Duplicate `complete -F _git_deck_completion` statements in the script were overriding each other, causing the completion to fail outside the git root directory.
+* **Solution:** Removed duplicate registrations, keeping only one registration per command (`git` and `deck`).
+* **Result:** Completion now works consistently across all subdirectories within the git repository.
+
