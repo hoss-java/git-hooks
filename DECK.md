@@ -268,3 +268,25 @@ gantt
 > # Reports:
 > *
 > </details>
+
+## 001-0011
+> **Implement pm reports.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
+> <details open>
+>     <summary>Details</summary>
+> 
+> # DOD (definition of done):
+> 
+> # TODO:
+> - [ ] 1. Adding detail sub command to column
+> - [ ] 2. Improve ls sub command for column
+> - [ ] 3. Improve completion for column
+> - [ ] 4. Improve ls sub command for card
+> - [ ] 5. adding detail sub command to card
+> - [ ] 6. Improve completion for card
+> 
+> 
+> - [ ] 3. improve completion
+> 
+> # Reports:
+> *
+> </details>
