@@ -161,25 +161,29 @@ gantt
 > *
 > </details>
 
-## 001-0007
-> **Improve installer to support add github action files.** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
+## 001-0011
+> **Implement pm reports.** ![status](https://img.shields.io/badge/status-DONE-brightgreen)
 > <details >
 >     <summary>Details</summary>
-> The goal of this card is to improve the installer to support install github action files.
 > 
 > # DOD (definition of done):
-> The installer has an option to install/copy guthub action files to repos
 > 
 > # TODO:
-> - [ ] 1.
+> - [x] 1. Adding detail sub command to column
+> - [x] 2. Improve ls sub command for column
+> - [x] 3. Improve completion for column
+> - [x] 4. Improve ls sub command for card
+> - [x] 5. adding detail sub command to card
+> - [x] 6. Improve completion for card
+> - [x] 3. improve completion
 > 
 > # Reports:
 > *
 > </details>
 
 ## 001-0005
-> **Connect git-deck and git hooks message.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
-> <details open>
+> **Connect git-deck and git hooks message.** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
+> <details >
 >     <summary>Details</summary>
 > The goal of this card is to improve gut-deck integration with git.
 > 
@@ -232,26 +236,25 @@ gantt
 > * There was some challenge to update git hooks, git hooks are `sh` based not `bash` and many statements that work on bash do not work on `sh`. For example it took a while to find a solution to read a multi-lines variable line-by-line though a loop.
 > </details>
 
-## 001-0008
-> **Fix auto completion bug.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
-> <details open>
+## 001-0007
+> **Improve installer to support add github action files.** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
+> <details >
 >     <summary>Details</summary>
-> The goal of this card is to completion bugs.
+> The goal of this card is to improve the installer to support install github action files.
 > 
 > # DOD (definition of done):
-> It works for both commit and deck.
+> The installer has an option to install/copy guthub action files to repos
 > 
 > # TODO:
-> - [x] 1. Fix the conflict between commit and deck.
-> - [ ] 2. Find out why only on git root , completions work
+> - [ ] 1.
 > 
 > # Reports:
 > *
 > </details>
 
 ## 001-0009
-> **Improve git hooks** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
-> <details open>
+> **Improve git hooks** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
+> <details >
 >     <summary>Details</summary>
 > The goal of this card is to improve Git hooks by separating the directives collector from the message formatter.
 > 
@@ -269,23 +272,18 @@ gantt
 > *
 > </details>
 
-## 001-0011
-> **Implement pm reports.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
+## 001-0008
+> **Fix auto completion bug.** ![status](https://img.shields.io/badge/status-ONGOING-yellow)
 > <details open>
 >     <summary>Details</summary>
+> The goal of this card is to completion bugs.
 > 
 > # DOD (definition of done):
+> It works for both commit and deck.
 > 
 > # TODO:
-> - [ ] 1. Adding detail sub command to column
-> - [ ] 2. Improve ls sub command for column
-> - [ ] 3. Improve completion for column
-> - [ ] 4. Improve ls sub command for card
-> - [ ] 5. adding detail sub command to card
-> - [ ] 6. Improve completion for card
-> 
-> 
-> - [ ] 3. improve completion
+> - [x] 1. Fix the conflict between commit and deck.
+> - [ ] 2. Find out why only on git root , completions work
 > 
 > # Reports:
 > *
