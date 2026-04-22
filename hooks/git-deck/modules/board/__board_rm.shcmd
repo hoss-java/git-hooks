@@ -7,23 +7,23 @@ __board_rm() {
     fi
 
     local board_name="$1"
-    shift 1 # Shift past the first two parameters
+    shift 1
 
     # Default values for options
     local option_remove='bin'
-    # Parse options using getopts
-    # Call the function and evaluate the output
-    local output=$(parse_options "remove" "r" "$@")
-    # Print options if the function executed successfully
-    if [[ $? -eq 0 ]]; then
-        eval "$output"  # Evaluate the options as variables
-        # Loop through the array and assign values to variables
-        for key in "${!options[@]}"; do
-            eval "$key=\"\${options[$key]}\""
-        done
-    else
-        return 1
-    fi
+    
+    # Manual option parsing - handles any order
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -r|--remove)
+                option_remove="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
 
     local board_dir="$DECK_DIR/$board_name"
     # Check if the board directory exists
@@ -33,8 +33,9 @@ __board_rm() {
         if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
             # Read the ID from the .id file
             if [ -f "$board_dir/.id" ]; then
+                local board_id=$(cat "$board_dir/.id")
+                
                 if [ "$option_remove" == 'permanent' ]; then
-                    local board_id=$(cat "$board_dir/.id")
                     rm -r "$board_dir"
                     return_value=$?
                     echo "Board '$board_name' with ID '$board_id' removed."
@@ -47,6 +48,7 @@ __board_rm() {
                     return_value=$?
                     echo "Board '$board_name' with ID '$board_id' was moved to '$bin_folder'."
                 fi
+                
                 # Check if this board was the default and reset it if necessary
                 if [ -f "$DEFAULT_BOARD_FILE" ] && [ "$(cat "$DEFAULT_BOARD_FILE")" = "$board_id" ]; then
                     echo "Default board was deleted. No active board is selected."

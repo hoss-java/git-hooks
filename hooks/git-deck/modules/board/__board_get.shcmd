@@ -1,0 +1,26 @@
+# Get the active board
+__board_get() {
+    local return_value=1
+    
+    # Check if the default board file exists
+    if [ -f "$DEFAULT_BOARD_FILE" ]; then
+        local board_id=$(cat "$DEFAULT_BOARD_FILE")
+        
+        # Find the board directory that matches this ID
+        for board_dir in "$DECK_DIR"/*; do
+            if [ -d "$board_dir" ] && [ -f "$board_dir/.id" ]; then
+                local id=$(cat "$board_dir/.id")
+                if [ "$id" = "$board_id" ]; then
+                    local board_name=$(basename "$board_dir")
+                    echo "$board_name"
+                    return 0
+                fi
+            fi
+        done        
+        return 1
+    else
+        return 1
+    fi
+    
+    return $return_value
+}

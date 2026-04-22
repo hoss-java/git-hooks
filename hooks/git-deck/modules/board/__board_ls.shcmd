@@ -5,19 +5,23 @@ __board_ls() {
     # Default values for options
     local option_output='full'
     local option_type='board'
-    # Parse options using getopts
-    # Call the function and evaluate the output
-    local output=$(parse_options "output:type" "o" "$@")
-    # Print options if the function executed successfully
-    if [[ $? -eq 0 ]]; then
-        eval "$output"  # Evaluate the options as variables
-        # Loop through the array and assign values to variables
-        for key in "${!options[@]}"; do
-            eval "$key=\"\${options[$key]}\""
-        done
-    else
-        return 1
-    fi
+    
+    # Manual option parsing - handles any order
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -o|--output)
+                option_output="$2"
+                shift 2
+                ;;
+            -t|--type)
+                option_type="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
 
     if [ -d "$DECK_DIR" ]; then
         [ "$option_output" == 'full' ] && \

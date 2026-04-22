@@ -6,20 +6,101 @@ __pm__completion(){
     prev_word="${_COMP_WORDS[_COMP_CWORD-1]}"
     command_name="${_COMP_WORDS[1]}"
 
+    # Get the Git root directory
+    local git_root
+    git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+
     # Create a copy of the array removing items that start with '_'
     if [[ "$_COMP_CWORD" -eq 3 ]]; then
-        # Define second-level commands for "git deck board"
         local filtered_commands=($(printf "%s\n" "${!func_subcommands[@]}" | grep -v '^_'))
         echo "${filtered_commands[*]}"
         return
     fi
 
-    # Autocompletion for 'set' command
-    if [[ "${_COMP_WORDS[3]}" == "edit" ]]; then
-        if [[ ("$_COMP_CWORD" -eq 4) ]]; then
-            local pm_options=("--editor" )
-            echo "${pm_options[@]}"
+    # Internal helper function for parameter completion
+    __param_completion() {
+        local cmd="$1"
+        shift
+        declare -A param_values
+        while [[ $# -gt 1 ]]; do
+            param_values["$1"]="$2"
+            shift 2
+        done
+        
+        local used_params=()
+        for ((i=4; i<_COMP_CWORD; i++)); do
+            if [[ "${_COMP_WORDS[i]}" == --* ]] || [[ "${_COMP_WORDS[i]}" == -* ]]; then
+                used_params+=("${_COMP_WORDS[i]}")
+            fi
+        done
+        
+        if [[ ! "$prev_word" =~ ^- ]]; then
+            local available_options=()
+            for param in "${!param_values[@]}"; do
+                local skip=0
+                for used in "${used_params[@]}"; do
+                    if [[ "$param" == "$used" ]]; then
+                        skip=1
+                        break
+                    fi
+                    if [[ "$param" == "--"* && "$used" == "-"* ]] || [[ "$param" == "-"* && "$used" == "--"* ]]; then
+                        if [[ "${param:2}" == "${used:1}" ]]; then
+                            skip=1
+                            break
+                        fi
+                    fi
+                done
+                [[ $skip -eq 0 ]] && available_options+=("$param")
+            done
+            echo "${available_options[@]}"
+        else
+            echo "${param_values[$prev_word]}"
         fi
+    }
+
+    # Internal helper function for positional completion
+    __positional_completion() {
+        local cmd="$1"
+        local position="$2"
+        shift 2
+        declare -A completions
+        while [[ $# -gt 1 ]]; do
+            completions["$1"]="$2"
+            shift 2
+        done
+        
+        echo "${completions[$position]}"
+    }
+
+    # Internal helper function for dynamic parameter completion
+    __dynamic_param_completion() {
+        local cmd="$1"
+        local position="$2"
+        shift 2
+        declare -A position_data
+        while [[ $# -gt 1 ]]; do
+            position_data["$1"]="$2"
+            shift 2
+        done
+        
+        if [[ "$_COMP_CWORD" -eq "$position" ]]; then
+            echo "${position_data[$position]}"
+        fi
+    }
+
+    # Autocompletion for 'report' command
+    if [[ "${_COMP_WORDS[2]}" == "report" ]]; then
+        __param_completion "report" \
+            "--type" "full summary" \
+            "-t" "full summary"
+        return
+    fi
+
+    # Autocompletion for 'edit' command
+    if [[ "${_COMP_WORDS[3]}" == "edit" ]]; then
+        __param_completion "edit" \
+            "--editor" "vim nano emacs" \
+            "-e" "vim nano emacs"
         return
     fi
 }

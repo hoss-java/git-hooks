@@ -6,66 +6,129 @@ __board__completion(){
     prev_word="${_COMP_WORDS[_COMP_CWORD-1]}"
     command_name="${_COMP_WORDS[1]}"
 
+    # Get the Git root directory
+    local git_root
+    git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
+
+    # Create a copy of the array removing items that start with '_'
     if [[ "$_COMP_CWORD" -eq 3 ]]; then
-        # Define second-level commands for "git deck board"
         local filtered_commands=($(printf "%s\n" "${!func_subcommands[@]}" | grep -v '^_'))
         echo "${filtered_commands[*]}"
         return
     fi
 
-    # Get the Git root directory
-    local git_root
-    git_root="$(git rev-parse --show-toplevel 2>/dev/null)"
-
-    # Autocompletion for 'set' command
-    if [[ "${_COMP_WORDS[3]}" == "mk" ]]; then
-        if [[ ("$_COMP_CWORD" -eq 5) ]]; then
-            # If we successfully obtained the git root, proceed
-            local board_options=("--template" "-t")
-            echo "${board_options[@]}"
-        elif [[ ("$_COMP_CWORD" -eq 6) ]]; then
-            # If we successfully obtained the git root, proceed
-            if [[ -d "${git_root}/.pm/deck" ]]; then
-                # List existing board directories in .pm/deck
-                local templates=$(git deck board ls --output name --type template)  # Exclude any .id files
-                echo "${templates}"
+    # Internal helper function for parameter completion
+    __param_completion() {
+        local cmd="$1"
+        shift
+        declare -A param_values
+        while [[ $# -gt 1 ]]; do
+            param_values["$1"]="$2"
+            shift 2
+        done
+        
+        local used_params=()
+        for ((i=4; i<_COMP_CWORD; i++)); do
+            if [[ "${_COMP_WORDS[i]}" == --* ]] || [[ "${_COMP_WORDS[i]}" == -* ]]; then
+                used_params+=("${_COMP_WORDS[i]}")
             fi
+        done
+        
+        if [[ ! "$prev_word" =~ ^- ]]; then
+            local available_options=()
+            for param in "${!param_values[@]}"; do
+                local skip=0
+                for used in "${used_params[@]}"; do
+                    if [[ "$param" == "$used" ]]; then
+                        skip=1
+                        break
+                    fi
+                    if [[ "$param" == "--"* && "$used" == "-"* ]] || [[ "$param" == "-"* && "$used" == "--"* ]]; then
+                        if [[ "${param:2}" == "${used:1}" ]]; then
+                            skip=1
+                            break
+                        fi
+                    fi
+                done
+                [[ $skip -eq 0 ]] && available_options+=("$param")
+            done
+            echo "${available_options[@]}"
+        else
+            echo "${param_values[$prev_word]}"
+        fi
+    }
+
+    # Internal helper function for positional completion
+    __positional_completion() {
+        local cmd="$1"
+        local position="$2"
+        shift 2
+        declare -A completions
+        while [[ $# -gt 1 ]]; do
+            completions["$1"]="$2"
+            shift 2
+        done
+        
+        echo "${completions[$position]}"
+    }
+
+    # Internal helper function for dynamic parameter completion
+    __dynamic_param_completion() {
+        local cmd="$1"
+        local position="$2"
+        shift 2
+        declare -A position_data
+        while [[ $# -gt 1 ]]; do
+            position_data["$1"]="$2"
+            shift 2
+        done
+        
+        if [[ "$_COMP_CWORD" -eq "$position" ]]; then
+            echo "${position_data[$position]}"
+        fi
+    }
+
+    # Autocompletion for 'mk' command
+    if [[ "${_COMP_WORDS[3]}" == "mk" ]]; then
+        if [[ "$_COMP_CWORD" -eq 4 ]]; then
+            if [[ -d "${git_root}/.pm/deck" ]]; then
+                local boards
+                boards=$(git deck board ls --output name)
+                __dynamic_param_completion "mk" 4 \
+                    4 "${boards}"
+            fi
+        else
+            __param_completion "mk" \
+                "--template" "$(git deck board ls --output name --type template)" \
+                "-t" "$(git deck board ls --output name --type template)"
         fi
         return
     fi
 
-    # Autocompletion for 'set' command
+    # Autocompletion for 'rm' command
     if [[ "${_COMP_WORDS[3]}" == "rm" ]]; then
-        if [[ ("$_COMP_CWORD" -eq 4) ]]; then
-            # If we successfully obtained the git root, proceed
+        if [[ "$_COMP_CWORD" -eq 4 ]]; then
             if [[ -d "${git_root}/.pm/deck" ]]; then
-                # List existing board directories in .pm/deck
                 local boards
-                boards=$(git deck board ls --output name)  # Exclude any .id files
-                echo "${boards}"
+                boards=$(git deck board ls --output name)
+                __dynamic_param_completion "rm" 4 \
+                    4 "${boards}"
             fi
-        elif [[ ("$_COMP_CWORD" -eq 5) ]]; then
-            # If we successfully obtained the git root, proceed
-            local board_options=("--remove" "-r")
-            echo "${board_options[*]}"
-        elif [[ ("$_COMP_CWORD" -eq 6) ]]; then
-            # If we successfully obtained the git root, proceed
-            local board_option_params=("permanent" )
-            echo "${board_option_params[*]}"
+        else
+            __positional_completion "rm" "$_COMP_CWORD" \
+                5 "--remove -r" \
+                6 "permanent"
         fi
-
         return
     fi
 
     # Autocompletion for 'set' command
     if [[ "${_COMP_WORDS[3]}" == "set" ]]; then
-        # If we successfully obtained the git root, proceed
         if [[ -d "${git_root}/.pm/deck" ]]; then
-            # List existing board directories in .pm/deck
             local boards
-            boards=$(git deck board ls --output name)  # Exclude any .id files
-
-            echo "${boards}"
+            boards=$(git deck board ls --output name)
+            __dynamic_param_completion "set" 4 \
+                4 "${boards}"
         fi
         return
     fi

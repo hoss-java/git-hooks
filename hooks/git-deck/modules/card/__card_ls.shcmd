@@ -8,19 +8,28 @@ __card_ls() {
     # Default values for options
     local option_output='full'
     local option_column='*'
-    # Parse options using getopts
-    # Call the function and evaluate the output
-    local output=$(parse_options "output:Column" "o:c" "$@")
-    # Print options if the function executed successfully
-    if [[ $? -eq 0 ]]; then
-        eval "$output"  # Evaluate the options as variables
-        # Loop through the array and assign values to variables
-        for key in "${!options[@]}"; do
-            eval "$key=\"\${options[$key]}\""
-        done
-    else
-        return 1
-    fi
+    local option_type=''
+    
+    # Manual option parsing - handles any order
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -o|--output)
+                option_output="$2"
+                shift 2
+                ;;
+            -c|--column)
+                option_column="$2"
+                shift 2
+                ;;
+            -t|--type)
+                option_type="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
 
     if [ "$option_output" == 'full' ]; then
         echo "Cards:"
@@ -32,13 +41,22 @@ __card_ls() {
             local card_path=$(dirname "$card")
             local card_colunm=$(basename "$(dirname "$card")")
 
-            # Read the config file for color and other settings
-            local column_config_file="$DECK_DIR/$DEFAULT_BOARD_NAME/$card_colunm/.config"
-            if [[ -f "$column_config_file" ]]; then
-                column_config_headers=$(extract_md_headers "$column_config_file")
-                eval "$column_config_headers"  # Evaluate to create associative array
-                # Extract values for statustext and statusdetails
-                column_color="${headers[color]:-}"
+            # Use __column_detail to get column details
+            local column_details=$(git deck column detail --name "$card_colunm" --output full)
+            
+            if [[ -z "$column_details" ]]; then
+                continue  # Skip if column doesn't exist
+            fi
+            
+            # Extract color from column details
+            local column_color=$(echo "$column_details" | grep "Color:" | awk -F': ' '{print $2}')
+            
+            # Extract type from column details
+            local column_type=$(echo "$column_details" | grep "Type:" | awk -F': ' '{print $2}')
+            
+            # Filter by type if --type option is provided
+            if [ -n "$option_type" ] && [ "$column_type" != "$option_type" ]; then
+                continue
             fi
 
             if [[ "$card_name" =~ ^[0-9]{1,4}$ ]]; then

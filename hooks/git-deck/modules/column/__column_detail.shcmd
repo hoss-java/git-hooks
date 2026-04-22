@@ -1,0 +1,88 @@
+__column_detail() {
+    local return_value=1
+    
+    # Default values for options
+    local option_output='full'
+    local option_type=''
+    local option_name=''
+    
+    # Manual option parsing - handles any order
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -o|--output)
+                option_output="$2"
+                shift 2
+                ;;
+            -t|--type)
+                option_type="$2"
+                shift 2
+                ;;
+            -n|--name)
+                option_name="$2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+
+    if [ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]; then
+        [ "$option_output" == 'full' ] &&\
+            echo "Error: No board selected."
+        return $return_value
+    fi
+
+    if [ -d "$DECK_DIR/$DEFAULT_BOARD_NAME" ]; then
+        for column in "$DECK_DIR"/$DEFAULT_BOARD_NAME/*; do
+            if [ -d "$column" ] && [ -f "$column/.id" ]; then
+                local column_name=$(basename "$column")
+                local column_id=$(cat "$column/.id")
+                local column_config_file="$column/.config"
+                
+                if [[ -f "$column_config_file" ]]; then
+                    column_config_headers=$(extract_md_headers "$column_config_file")
+                    eval "$column_config_headers"
+                    
+                    local config_name="${headers[name]:-NA}"
+                    local config_description="${headers[description]:-}"
+                    local config_type="${headers[type]:-NA}"
+                    local config_color="${headers[color]:-NA}"
+                    
+                    # Filter by type if --type option is provided
+                    if [ -n "$option_type" ] && [ "$config_type" != "$option_type" ]; then
+                        continue
+                    fi
+                    
+                    # Filter by name if --name option is provided
+                    if [ -n "$option_name" ] && [ "$config_name" != "$option_name" ]; then
+                        continue
+                    fi
+                    
+                    # Output based on --output option
+                    if [ "$option_output" == 'name' ]; then
+                        echo "$config_name"
+                    elif [ "$option_output" == 'type' ]; then
+                        echo "$config_type"
+                    elif [ "$option_output" == 'color' ]; then
+                        echo "$config_color"
+                    else
+                        # Full output
+                        echo "Column: $column_name ($column_id)"
+                        echo "  Name: $config_name"
+                        echo "  Description: $config_description"
+                        echo "  Type: $config_type"
+                        echo "  Color: $config_color"
+                        echo ""
+                    fi
+                    
+                    return_value=0
+                fi
+            fi
+        done
+    else
+        [ "$option_output" == 'full' ] && \
+            echo "No columns found."
+    fi
+    return $return_value
+}
