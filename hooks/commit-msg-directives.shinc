@@ -61,8 +61,6 @@ if [ "$commit_msg_line_count" -gt 0 ] && [ -n "$(echo "$commit_msg_extralines" |
                     commitCheckFlag=false
                     ;;
                 "--merge")
-                    echo "Pass to CI/DI flows: $directive with parameters: '${params}'."
-                    commitCheckFlag=false
                     ;;
                 # Add more cases for additional commands as needed
                 *)

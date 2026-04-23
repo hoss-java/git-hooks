@@ -69,6 +69,8 @@ if [ "$validateActiveCardFlag" = true ]; then
         valid_cards="$active_cards
 $done_cards"
         
+        deckCardId=$(echo "$deckCardId" | sed 's/^0*//')
+        deckCardId=$((deckCardId + 0))
         card_padded=$(printf "%04d" "$deckCardId")
 
         if ! echo "$valid_cards" | grep -q "^$card_padded$"; then
