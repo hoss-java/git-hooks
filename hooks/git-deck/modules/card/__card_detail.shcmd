@@ -141,6 +141,23 @@ __card_detail() {
         echo "${days}d ${hours}h ${minutes}m"
     }
 
+    __print_table_row() {
+        local -n width_arr=$1
+        shift
+        local -a values=("$@")
+        local row_fmt=""
+        
+        # Build format string dynamically based on widths
+        for i in "${!width_arr[@]}"; do
+            if [[ $i -eq 0 ]]; then
+                row_fmt+="%-${width_arr[$i]}s"
+            else
+                row_fmt+=" | %-${width_arr[$i]}s"
+            fi
+        done
+        
+        printf -- "$row_fmt\n" "${values[@]}"
+    }
 
     # Output formatter
     __format_card_output() {
@@ -196,39 +213,20 @@ __card_detail() {
             screen)
                 case "$output_set" in
                     short)
-                        printf "%-4s | %-40s\n" "$card" "$title"
+                        local -a short_widths=(4 40)
+                        __print_table_row short_widths "$card" "$title"
                         ;;
                     full)
-                        local status_icon=""
-                        if [[ "$estimate" != "-" ]]; then
-                            local time_val=$(echo "$time_spent" | awk '{print $1}' | sed 's/d//')
-                            local estimate_val=$(echo "$estimate" | sed 's/[a-zA-Z]//g')
-                            if [[ $time_val -gt $estimate_val ]]; then
-                                status_icon="⚠️ DELAYED"
-                            elif [[ $time_val -eq $estimate_val ]]; then
-                                status_icon="✓ ON_TRACK"
-                            else
-                                status_icon="✓ OK"
-                            fi
-                        fi
-                        printf "%-4s | %-8s | %-30s | %-12s | %-16s | %-16s | %-16s | %-10s | %-8s | %-10s | %-15s\n" \
-                            "$card" "$status" "$title" "$column" "$created" "$started" "$ended" "$time_spent" "$commits" "$assigned" "$estimate $status_icon"
+                        local -a full_widths=(4 8 30 12 20 20 20 10 8 10 15)
+                        __print_table_row full_widths "$card" "$status" "$title" "$column" "$created" "$started" "$ended" "$time_spent" "$commits" "$assigned" "$estimate"
                         ;;
                     *)
-                        local status_icon=""
-                        if [[ "$estimate" != "-" ]]; then
-                            local time_val=$(echo "$time_spent" | awk '{print $1}' | sed 's/d//')
-                            local estimate_val=$(echo "$estimate" | sed 's/[a-zA-Z]//g')
-                            if [[ $time_val -gt $estimate_val ]]; then
-                                status_icon="⚠️"
-                            fi
-                        fi
-                        printf "%-4s | %-8s | %-30s | %-16s | %-16s | %-10s | %-10s\n" \
-                            "$card" "$status" "$title" "$created" "$started" "$time_spent" "$estimate $status_icon"
+                        local -a default_widths=(4 8 30 20 20 10 10)
+                        __print_table_row default_widths "$card" "$status" "$title" "$created" "$started" "$time_spent" "$estimate"
                         ;;
                 esac
                 ;;
-        esac
+            esac
     }
 
     # Helpers: Extract card info
@@ -292,6 +290,50 @@ __card_detail() {
         git log --all --format='%H' --grep="\[$card_ref\]" 2>/dev/null | wc -l
     }
 
+    __calibrate_card_dates() {
+        local created_ref="$1" started_ref="$2" ended_ref="$3"
+        
+        # Use nameref to work with variable references
+        local -n created="$created_ref" started="$started_ref" ended="$ended_ref"
+        
+        # If started is empty, use created
+        [[ -z "$started" ]] && started="$created"
+        
+        # If ended is before started or created, use started
+        if [[ -n "$ended" ]]; then
+            [[ "$ended" < "$started" ]] && ended="$started"
+            [[ "$ended" < "$created" ]] && ended="$created"
+        fi
+    }
+
+    __repeat_char() {
+        local char="$1" count="$2"
+        printf '%*s' "$count" | tr ' ' "$char"
+    }
+
+    __print_table_header() {
+        local -n header_arr=$1 width_arr=$2
+        local header_fmt="" sep_fmt=""
+        
+        # Build format strings dynamically
+        for i in "${!header_arr[@]}"; do
+            if [[ $i -eq 0 ]]; then
+                header_fmt+="%-${width_arr[$i]}s"
+                sep_fmt+="$(__repeat_char '-' ${width_arr[$i]})"
+            else
+                header_fmt+=" | %-${width_arr[$i]}s"
+                sep_fmt+="-+-$(__repeat_char '-' ${width_arr[$i]})"
+            fi
+        done
+        
+        # Print header (use -- to prevent printf from interpreting dashes as options)
+        printf -- "$header_fmt\n" "${header_arr[@]}"
+        
+        # Print separator
+        printf -- "$sep_fmt\n"
+    }
+
+
     # Main logic
     local card_ls_args="--output short"
     [[ -n "$option_column" ]] && card_ls_args="$card_ls_args --column $option_column"
@@ -312,20 +354,19 @@ __card_detail() {
     if [[ "$option_format" == 'screen' ]]; then
         case "$output_set" in
             short)
-                printf "%-4s | %-40s\n" "Card" "Title"
-                printf "%-4s-+-%-40s\n" "----" "----------------------------------------"
+                declare -a headers=("Card" "Title")
+                declare -a widths=(4 40)
+                __print_table_header headers widths
                 ;;
             full)
-                printf "%-4s | %-8s | %-30s | %-12s | %-16s | %-16s | %-16s | %-10s | %-8s | %-10s | %-15s\n" \
-                    "Card" "Status" "Title" "Column" "Created" "Started" "Ended" "Time" "Commits" "Assigned" "Estimate"
-                printf "%-4s-+-%-8s-+-%-30s-+-%-12s-+-%-16s-+-%-16s-+-%-16s-+-%-10s-+-%-8s-+-%-10s-+-%-15s\n" \
-                    "----" "--------" "------------------------------" "------------" "----------------" "----------------" "----------------" "----------" "--------" "----------" "---------------"
+                declare -a headers=("Card" "Status" "Title" "Column" "Created" "Started" "Ended" "Time" "Commits" "Assigned" "Estimate")
+                declare -a widths=(4 8 30 12 20 20 20 10 8 10 15)
+                __print_table_header headers widths
                 ;;
             *)
-                printf "%-4s | %-8s | %-30s | %-16s | %-16s | %-10s | %-10s\n" \
-                    "Card" "Status" "Title" "Created" "Started" "Time" "Estimate"
-                printf "%-4s-+-%-8s-+-%-30s-+-%-16s-+-%-16s-+-%-10s-+-%-10s\n" \
-                    "----" "--------" "------------------------------" "----------------" "----------------" "----------" "----------"
+                declare -a headers=("Card" "Status" "Title" "Created" "Started" "Time" "Estimate")
+                declare -a widths=(4 8 30 20 20 10 10)
+                __print_table_header headers widths
                 ;;
         esac
     fi
@@ -343,7 +384,10 @@ __card_detail() {
         local created_date=$(__find_card_date "$card" "CreateAt")
         local started_date=$(__find_card_date "$card" "StartAt" "START")
         local ended_date=$(__find_card_date "$card" "EndAt" "DONE")
-        
+
+        # Calibrate dates to ensure logical timeline
+        __calibrate_card_dates "created_date" "started_date" "ended_date"        
+
         local status="TODO"
         local start_columns=$(git deck column detail --output name --type START 2>/dev/null)
         local done_columns=$(git deck column detail --output name --type DONE 2>/dev/null)
