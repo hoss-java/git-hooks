@@ -1,0 +1,28 @@
+---
+#...
+# Git-deck card header
+# OBS! DON'T REMOVE CARD HEADERS
+#...
+Title: Fix issues on Time calculations.
+Tags:
+Creator:
+AssignedTo: Hossein
+Priority:
+Status: DONE
+Estimate: 1h
+DueDate:
+# Time tracker settings
+CreateAt:
+StartAt: 2026-04-23T13:40:35Z
+EndAt: 2026-04-23T14:25:52Z
+---
+The goal of this card is to fix issues on time calculations.
+
+# DOD (definition of done):
+Reports and details shows spend times and estimations correctly
+
+# TODO:
+- [] 1.
+
+# Reports:
+*

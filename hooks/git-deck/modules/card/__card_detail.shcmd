@@ -31,7 +31,7 @@ __card_detail() {
         # Try to parse and normalize
         local timestamp=$(date -d "$date_str" +%s 2>/dev/null || echo "0")
         if [[ $timestamp -ne 0 ]]; then
-            date -u -d "@$timestamp" +%Y-%m-%d\ %H:%M 2>/dev/null || echo "-"
+            date -u -d "@$timestamp" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "-"
         else
             echo "-"
         fi
@@ -46,6 +46,7 @@ __card_detail() {
             grep "^${field}:" "$file" | head -1 | sed "s/^${field}:[[:space:]]*//;s/[[:space:]]*$//"
         fi
     }
+
 
     # Helper: Find date with fallback methods
     __find_card_date() {
@@ -87,16 +88,16 @@ __card_detail() {
             fi
         fi
         
-        # Method 3: Filesystem time (ONLY for CreateAt, not for EndAt/StartAt)
+        # Method 3: Filesystem time (for CreateAt only)
         if [[ "$field" == "CreateAt" ]] && [[ -f "$card_file" ]]; then
             local fs_time=$(stat -c %y "$card_file" 2>/dev/null | cut -d' ' -f1,2)
             __normalize_date "$fs_time"
             return 0
         fi
         
+        # Method 4: No result found
         echo "-"
     }
-
 
     # Helper: Calculate time between dates
     __calculate_time_between() {
@@ -123,6 +124,7 @@ __card_detail() {
         
         local timestamp1=$(date -d "${date1}" +%s 2>/dev/null || echo "0")
         local timestamp2=$(date -d "${date2}" +%s 2>/dev/null || echo "0")
+        
             
         if [[ $timestamp1 -eq 0 ]] || [[ $timestamp2 -eq 0 ]]; then
             echo "-"
@@ -130,13 +132,14 @@ __card_detail() {
         fi
         
         local diff=$((timestamp2 - timestamp1))
-        local days=$((diff / 86400))
-        local hours=$(((diff % 86400) / 3600))
         
-        echo "${days}d ${hours}h"
+        local days=$((diff / 86400))
+        local remaining=$((diff % 86400))
+        local hours=$((remaining / 3600))
+        local minutes=$(((remaining % 3600) / 60))
+        
+        echo "${days}d ${hours}h ${minutes}m"
     }
-
-
 
 
     # Output formatter

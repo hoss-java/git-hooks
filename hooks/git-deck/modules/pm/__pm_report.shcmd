@@ -73,6 +73,7 @@ __pm_report() {
         fi
 
         # Parse time_spent
+        # Parse time_spent
         local time_days=$(echo "$time_spent" | awk '{print $1}' | sed 's/d//')
         local time_hours=$(echo "$time_spent" | awk '{print $2}' | sed 's/h//')
         [[ -z "$time_days" ]] && time_days=0
@@ -144,6 +145,7 @@ __pm_report() {
     fi
 
     # Estimation Report
+    # Estimation Report
     __report_estimation() {
         echo "Time & Estimation:"
         echo "  Cards with estimates:    $cards_with_estimate"
@@ -154,16 +156,72 @@ __pm_report() {
             printf "  On Time:  ✓ %2d / %2d cards (%3d%%)\n" "$cards_on_time" "$card_count_for_variance" "$((cards_on_time * 100 / card_count_for_variance))"
             printf "  Delayed:  ⚠️  %2d / %2d cards (%3d%%)\n" "$cards_delayed" "$card_count_for_variance" "$((cards_delayed * 100 / card_count_for_variance))"
             printf "  Ahead:    ⚡ %2d / %2d cards (%3d%%)\n" "$cards_ahead" "$card_count_for_variance" "$((cards_ahead * 100 / card_count_for_variance))"
+            echo ""
+            
+            # New: Calculate variance statistics
+            local total_variance_hours=0
+            local ahead_hours=0
+            local delayed_hours=0
+            local total_estimated=0
+            local total_actual=0
+            
+            # Re-parse cards to calculate detailed variance
+            while IFS='|' read -r card status title column created start ended time_spent commits assigned estimate; do
+                status=$(echo "$status" | xargs)
+                time_spent=$(echo "$time_spent" | xargs)
+                estimate=$(echo "$estimate" | xargs)
+                
+                if [[ "$status" == "DONE" ]] && [[ "$estimate" != "-" ]]; then
+                    local time_days=$(echo "$time_spent" | awk '{print $1}' | sed 's/d//')
+                    local time_hours=$(echo "$time_spent" | awk '{print $2}' | sed 's/h//')
+                    local time_minutes=$(echo "$time_spent" | awk '{print $3}' | sed 's/m//')
+                    
+                    [[ -z "$time_days" ]] && time_days=0
+                    [[ -z "$time_hours" ]] && time_hours=0
+                    [[ -z "$time_minutes" ]] && time_minutes=0
+                    
+                    local actual_hours=$((time_days * 24 + time_hours + time_minutes / 60))
+                    local est_val=$(echo "$estimate" | sed 's/[a-zA-Z]//g')
+                    [[ -z "$est_val" ]] && est_val=0
+                    
+                    local variance=$((actual_hours - est_val))
+                    total_estimated=$((total_estimated + est_val))
+                    total_actual=$((total_actual + actual_hours))
+                    
+                    if [[ $variance -gt 0 ]]; then
+                        delayed_hours=$((delayed_hours + variance))
+                    else
+                        ahead_hours=$((ahead_hours - variance))
+                    fi
+                fi
+            done <<< "$cards_data"
+            
+            echo "Estimation Accuracy (DONE cards only):"
+            printf "  Total Estimated: %d hours\n" "$total_estimated"
+            printf "  Total Actual:    %d hours\n" "$total_actual"
+            
+            if [[ $total_estimated -gt 0 ]]; then
+                local accuracy=$((total_actual * 100 / total_estimated))
+                printf "  Accuracy:        %d%% (actual vs estimated)\n" "$accuracy"
+            fi
             
             if [[ $cards_delayed -gt 0 ]]; then
-                local avg_delay=$((total_delay_hours / cards_delayed))
-                printf "  Avg Delay: %d hours\n" "$avg_delay"
+                local avg_delay=$((delayed_hours / cards_delayed))
+                printf "  Avg Delay:       %d hours/card\n" "$avg_delay"
+                printf "  Total Delay:     %d hours\n" "$delayed_hours"
+            fi
+            
+            if [[ $cards_ahead -gt 0 ]]; then
+                local avg_ahead=$((ahead_hours / cards_ahead))
+                printf "  Avg Faster:      %d hours/card\n" "$avg_ahead"
+                printf "  Total Saved:     %d hours\n" "$ahead_hours"
             fi
         else
             echo "  No completed cards with estimates to analyze."
         fi
         echo ""
     }
+
 
     # Overview Report
     __report_overview() {

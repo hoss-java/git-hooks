@@ -14,7 +14,7 @@ DueDate:
 # Time tracker settings
 CreateAt:
 StartAt: 2026-04-23T11:41:55Z
-EndAt: 2026-04-23T12:38:17Z
+EndAt: 2026-04-23T13:38:17Z
 ---
 
 The goal of this card is to improve gut-deck integration with git.
