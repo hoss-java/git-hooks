@@ -59,13 +59,20 @@ if [ -n "$deckIdBlock" ] && [ -n "$deckIdStr" ]; then
 fi
 
 # Validate active card if flag is set
+# Validate active card if flag is set
 if [ "$validateActiveCardFlag" = true ]; then
     if [ -n "$deckCardId" ]; then
         active_cards=$(git deck card ls --output short --type START 2>/dev/null)
+        done_cards=$(git deck card ls --output short --type DONE 2>/dev/null)
+        
+        # Combine both lists
+        valid_cards="$active_cards
+$done_cards"
+        
         card_padded=$(printf "%04d" "$deckCardId")
 
-        if ! echo "$active_cards" | grep -q "^$card_padded$"; then
-            echo "Error: Card $card_padded is not in active (START) status"
+        if ! echo "$valid_cards" | grep -q "^$card_padded$"; then
+            echo "Error: Card $card_padded is not in active (START) or done (DONE) status"
             exit 1
         fi
     fi

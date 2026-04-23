@@ -65,8 +65,8 @@ __card_detail() {
             fi
         fi
         
-        # Method 2: Git log for moved dates
-        if [[ -n "$type" ]]; then
+        # Method 2: Git log for moved dates (only for StartAt and EndAt)
+        if [[ "$field" == "StartAt" || "$field" == "EndAt" ]] && [[ -n "$type" ]]; then
             local columns=$(git deck column detail --output name --type "$type" 2>/dev/null)
             local all_times=()
             
@@ -87,8 +87,8 @@ __card_detail() {
             fi
         fi
         
-        # Method 3: Filesystem time
-        if [[ -f "$card_file" ]]; then
+        # Method 3: Filesystem time (ONLY for CreateAt, not for EndAt/StartAt)
+        if [[ "$field" == "CreateAt" ]] && [[ -f "$card_file" ]]; then
             local fs_time=$(stat -c %y "$card_file" 2>/dev/null | cut -d' ' -f1,2)
             __normalize_date "$fs_time"
             return 0
@@ -97,23 +97,33 @@ __card_detail() {
         echo "-"
     }
 
+
     # Helper: Calculate time between dates
     __calculate_time_between() {
         local date1=$1
         local date2=$2
+        local created_date=$3
         
-        if [[ "$date1" == "-" ]] || [[ -z "$date1" ]]; then
+        
+        # If both started and created are missing, can't calculate
+        if [[ ("$date1" == "-" || -z "$date1") && ("$created_date" == "-" || -z "$created_date") ]]; then
             echo "-"
             return
         fi
         
+        # If started time is not defined, use created time as start
+        if [[ "$date1" == "-" ]] || [[ -z "$date1" ]]; then
+            date1="$created_date"
+        fi
+        
+        # If ended time is not defined or empty, use current time (for calculation only)
         if [[ -z "$date2" ]] || [[ "$date2" == "-" ]]; then
             date2=$(date -u +%Y-%m-%dT%H:%M:%SZ)
         fi
         
         local timestamp1=$(date -d "${date1}" +%s 2>/dev/null || echo "0")
         local timestamp2=$(date -d "${date2}" +%s 2>/dev/null || echo "0")
-        
+            
         if [[ $timestamp1 -eq 0 ]] || [[ $timestamp2 -eq 0 ]]; then
             echo "-"
             return
@@ -125,6 +135,9 @@ __card_detail() {
         
         echo "${days}d ${hours}h"
     }
+
+
+
 
     # Output formatter
     __format_card_output() {
@@ -335,7 +348,7 @@ __card_detail() {
         echo "$start_columns" | grep -q "^$column$" && status="START"
         echo "$done_columns" | grep -q "^$column$" && status="DONE"
         
-        local time_spent=$(__calculate_time_between "$started_date" "$ended_date")
+        local time_spent=$(__calculate_time_between "$started_date" "$ended_date" "$created_date")
         local commit_count=$(__find_card_commits "$card")
         
         case "$option_output" in

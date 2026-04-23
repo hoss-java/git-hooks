@@ -41,6 +41,13 @@ __pm_report() {
     local total_time_spent=0
     local project_start_date=""
     local project_end_date=""
+    local cards_on_time=0
+    local cards_delayed=0
+    local cards_ahead=0
+    local cards_with_estimate=0
+    local cards_without_estimate=0
+    local total_delay_hours=0
+    local card_count_for_variance=0
     declare -A column_counts
     declare -a card_list
 
@@ -78,6 +85,24 @@ __pm_report() {
             local est_val=$(echo "$estimate" | sed 's/[a-zA-Z]//g')
             [[ -z "$est_val" ]] && est_val=0
             total_estimate=$((total_estimate + est_val))
+            cards_with_estimate=$((cards_with_estimate + 1))
+            
+            # Only analyze DONE cards for accuracy
+            if [[ "$status" == "DONE" ]]; then
+                card_count_for_variance=$((card_count_for_variance + 1))
+                local variance=$((total_time_hours - est_val))
+                
+                if [[ $variance -gt 0 ]]; then
+                    cards_delayed=$((cards_delayed + 1))
+                    total_delay_hours=$((total_delay_hours + variance))
+                elif [[ $variance -lt 0 ]]; then
+                    cards_ahead=$((cards_ahead + 1))
+                else
+                    cards_on_time=$((cards_on_time + 1))
+                fi
+            fi
+        else
+            cards_without_estimate=$((cards_without_estimate + 1))
         fi
 
         case "$status" in
@@ -118,6 +143,28 @@ __pm_report() {
         local project_days=0
     fi
 
+    # Estimation Report
+    __report_estimation() {
+        echo "Time & Estimation:"
+        echo "  Cards with estimates:    $cards_with_estimate"
+        echo "  Cards without estimates: $cards_without_estimate"
+        echo ""
+        
+        if [[ $card_count_for_variance -gt 0 ]]; then
+            printf "  On Time:  ✓ %2d / %2d cards (%3d%%)\n" "$cards_on_time" "$card_count_for_variance" "$((cards_on_time * 100 / card_count_for_variance))"
+            printf "  Delayed:  ⚠️  %2d / %2d cards (%3d%%)\n" "$cards_delayed" "$card_count_for_variance" "$((cards_delayed * 100 / card_count_for_variance))"
+            printf "  Ahead:    ⚡ %2d / %2d cards (%3d%%)\n" "$cards_ahead" "$card_count_for_variance" "$((cards_ahead * 100 / card_count_for_variance))"
+            
+            if [[ $cards_delayed -gt 0 ]]; then
+                local avg_delay=$((total_delay_hours / cards_delayed))
+                printf "  Avg Delay: %d hours\n" "$avg_delay"
+            fi
+        else
+            echo "  No completed cards with estimates to analyze."
+        fi
+        echo ""
+    }
+
     # Overview Report
     __report_overview() {
         echo "Timeline: $project_start_date → $project_end_date ($project_days days)"
@@ -127,20 +174,7 @@ __pm_report() {
         printf "  ⚙ Ongoing:     %2d / %2d  (%3d%%)\n" "$ongoing_cards" "$total_cards" "$(( ongoing_cards * 100 / total_cards ))"
         printf "  ○ Not Started: %2d / %2d  (%3d%%)\n" "$not_started_cards" "$total_cards" "$(( not_started_cards * 100 / total_cards ))"
         echo ""
-        echo "Time & Estimation:"
-        printf "  Total Time:     %d hours\n" "$total_time_spent"
-        printf "  Total Estimate: %d hours\n" "$total_estimate"
-        if [[ $total_estimate -gt 0 ]]; then
-            local variance=$((total_time_spent - total_estimate))
-            if [[ $variance -gt 0 ]]; then
-                printf "  Status:         ⚠️  DELAYED by %d hours\n" "$variance"
-            elif [[ $variance -lt 0 ]]; then
-                printf "  Status:         ✓ AHEAD by %d hours\n" "$((variance * -1))"
-            else
-                printf "  Status:         ✓ ON TRACK\n"
-            fi
-        fi
-        echo ""
+        __report_estimation
         echo "Commits:"
         printf "  Total:   %d commits\n" "$total_commits"
         printf "  Done:    %d commits\n" "$done_commits"
