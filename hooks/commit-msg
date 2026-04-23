@@ -34,6 +34,23 @@ if test ! -f "$1" ; then
   exit 1
 fi
 
+# Detect if we're in a merge or rebase in progress
+if [ -f "$GIT_DIR/MERGE_HEAD" ] || [ -f "$GIT_DIR/REBASE_MERGE_HEAD" ] || [ -f "$GIT_DIR/REBASE_APPLY_HEAD" ]; then
+    isMergeInProgress=true
+else
+    isMergeInProgress=false
+fi
+
+# Check if this is a commit --amend by looking for existing Change-Id
+if grep -q "^Change-Id:" "$1" ; then
+    # This is an amendment to an existing commit
+    hasChangeID=true
+else
+    # This is a new commit
+    hasChangeID=false
+fi
+
+
 #---------------------------------------
 # Import default settings and message formater
 GIT_ROOT="$(git rev-parse --show-toplevel)"
@@ -46,18 +63,20 @@ else
     commitCheckFlag=true
 fi
 
-COMMIT_MSG_DIRECTIVES_SHINC=.git/hooks/commit-msg-directives.shinc
-if [ -f "$COMMIT_MSG_DIRECTIVES_SHINC" ]; then
-    . ${COMMIT_MSG_DIRECTIVES_SHINC}
+if [ "$isMergeInProgress" = "true" ]; then
+    COMMIT_MSG_DIRECTIVES_SHINC=.git/hooks/commit-msg-directives.shinc
+    if [ -f "$COMMIT_MSG_DIRECTIVES_SHINC" ]; then
+        . ${COMMIT_MSG_DIRECTIVES_SHINC}
 
-    COMMIT_MSG_FORMAT_SHINC=.git/hooks/commit-msg-format.shinc
-    if [ -f "$COMMIT_MSG_FORMAT_SHINC" ]; then
-        . ${COMMIT_MSG_FORMAT_SHINC}
+        COMMIT_MSG_FORMAT_SHINC=.git/hooks/commit-msg-format.shinc
+        if [ -f "$COMMIT_MSG_FORMAT_SHINC" ]; then
+            . ${COMMIT_MSG_FORMAT_SHINC}
+        fi
     fi
 fi
 #---------------------------------------
 
-if [ "$gerritChangeIdFlag" = true ]; then
+if [ "$gerritChangeIdFlag" = true ] && [ "$hasChangeID" = false ]; then
     # Do not create a change id if requested
     if test "false" = "`git config --bool --get gerrit.createChangeId`" ; then
         exit 0
@@ -82,13 +101,15 @@ fi
 
 #---------------------------------------
 # Import Deck link adder
-COMMIT_MSG_DECKLINK_SHINC=.git/hooks/commit-msg-decklink.shinc
-if [ -f "$COMMIT_MSG_DECKLINK_SHINC" ]; then
-    . ${COMMIT_MSG_DECKLINK_SHINC}
+if [ "$isMergeInProgress" = "true" ]; then
+    COMMIT_MSG_DECKLINK_SHINC=.git/hooks/commit-msg-decklink.shinc
+    if [ -f "$COMMIT_MSG_DECKLINK_SHINC" ]; then
+        . ${COMMIT_MSG_DECKLINK_SHINC}
+    fi
 fi
 #---------------------------------------
 
-if [ "$gerritChangeIdFlag" = true ]; then
+if [ "$gerritChangeIdFlag" = true ] && [ "$isAmendment" = false ]; then
     # Avoid the --in-place option which only appeared in Git 2.8
     # Avoid the --if-exists option which only appeared in Git 2.15
     if ! git -c trailer.ifexists=doNothing interpret-trailers \

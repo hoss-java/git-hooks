@@ -1,6 +1,29 @@
-# Create a new card on the current default column of the selected board
 __card_mk() {
     local return_value=1
+
+    __apply_template_replacements() {
+        local file="$1"
+        shift
+        
+        while [[ $# -gt 0 ]]; do
+            local placeholder="$1"
+            local value="$2"
+            sed -i "s|${placeholder}|${value}|g" "$file"
+            shift 2
+        done
+    }
+
+    __apply_header_replacements() {
+        local file="$1"
+        shift
+        
+        while [[ $# -gt 0 ]]; do
+            local key="$1"
+            local value="$2"
+            sed -i "/^---$/,/^---$/{s/^[[:space:]]*${key}:[[:space:]]*.*/${key}: ${value}/;t;s/^[[:space:]]*${key}:$/${key}: ${value}/;}" "$file"
+            shift 2
+        done
+    }
 
     ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
         echo "Error: No board selected." && \
@@ -18,10 +41,8 @@ __card_mk() {
     local card_title="$1"
     shift 1
 
-    # Default values for options
     local option_editor="nano"
     
-    # Manual option parsing - handles any order
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -e|--editor)
@@ -38,7 +59,6 @@ __card_mk() {
     search_output=$(__card_find "title=$card_title" --output notitle --match full)
     local search_status=$?
     if [ "$search_status" == 0 ]; then
-        # Get the first line
         local first_line=$(echo "$search_output" | head -n 1)
         echo "There is a card exact with the same title, '$first_line'"
         read -p "Do you want to Edit it instead to create a new one? (y/n): " answer
@@ -50,34 +70,41 @@ __card_mk() {
         fi
     fi
 
-    # Scan for existing IDs in board directories
     local existing_ids=$(find "$DECK_DIR/$DEFAULT_BOARD_NAME" -mindepth 1 -maxdepth 2 -type f -printf "%f\n" | \
         awk '{print $1+0}' | awk '$1 != 0' | sort -n)
 
-    # Find the first available ID
     local new_id=1
     while echo "$existing_ids" | grep -q "^$new_id$"; do
         new_id=$((new_id + 1))
     done
 
-    # Ensure the ID is a four-digit number; max is 9999
     if [ "$new_id" -gt 9999 ]; then
         echo "Error: Maximum number of cards (10000) reached."
         return $return_value
     fi
 
-    # Look for a card template
+    local git_user=$(git config user.name)
     local card_template="$DECK_DIR/$DEFAULT_BOARD_NAME/$DEFAULT_COLUMN_NAME/default-card"
     local new_card_file="$DECK_DIR/$DEFAULT_BOARD_NAME/$DEFAULT_COLUMN_NAME/$(printf "%04d" "$new_id")"
+    
     if [ -f "$card_template" ]; then
         cp "$card_template" "$new_card_file"
-        # Use sed to replace %TITLE% with the new title
-        sed -i "s/%TITLE%/$card_title/g" "$new_card_file"
+        
+        __apply_template_replacements "$new_card_file" \
+            "%TITLE%" "$card_title" \
+            "%BOARD%" "$DEFAULT_BOARD_NAME" \
+            "%CREATEAT%" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        
+        __apply_header_replacements "$new_card_file" \
+            "Creator" "$git_user" \
+            "Status" ""
     else
         {
             echo "---"
             echo "Title: $card_title"
-            echo "Tags:"
+            echo "Tags: $DEFAULT_BOARD_NAME"
+            echo "Creator: $git_user"
+            echo "CreateAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "---"
         } > "$new_card_file"
     fi

@@ -88,6 +88,16 @@ __board__completion(){
         fi
     }
 
+    # Autocompletion for 'ls' command
+    if [[ "${_COMP_WORDS[3]}" == "ls" ]]; then
+        __param_completion "ls" \
+            "--output" "id name" \
+            "-o" "id name" \
+            "--type" "template board selected" \
+            "-t" "template board selected"
+        return
+    fi
+
     # Autocompletion for 'mk' command
     if [[ "${_COMP_WORDS[3]}" == "mk" ]]; then
         if [[ "$_COMP_CWORD" -eq 4 ]]; then

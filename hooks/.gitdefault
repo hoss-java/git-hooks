@@ -26,3 +26,6 @@ gerritChangeIdFlag=true
 
 # Run tests (.commit-check)
 commitCheckFlag=false
+
+# Validate card is active (START type)
+validateActiveCardFlag=true

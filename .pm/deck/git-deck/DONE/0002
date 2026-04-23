@@ -1,7 +1,22 @@
 ---
+#...
+# Git-deck card header
+# OBS! DON'T REMOVE CARD HEADERS
+#...
 Title: Update and Enhance Git Hooks for Better Optimization and Readability.
 Tags: git-deck
+Creator:
+AssignedTo:
+Priority:
+Status:
+Estimate: 
+DueDate:
+# Time tracker settings
+CreateAt:
+StartAt:
+EndAt:
 ---
+
 The goal of card to improve an optimize the current code for all git-deck parts.
 
 # DOD (definition of done):

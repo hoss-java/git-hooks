@@ -24,7 +24,7 @@ __pm_report() {
         return 1
 
     # Get cards data once
-    local cards_data=$(git deck card detail --format plain)
+    local cards_data=$(git deck card detail --format plain --output full)
     [ -z "$cards_data" ] && \
         echo "Error: No cards found." && \
         return 1
@@ -37,21 +37,25 @@ __pm_report() {
     local total_commits=0
     local done_commits=0
     local ongoing_commits=0
+    local total_estimate=0
+    local total_time_spent=0
     local project_start_date=""
     local project_end_date=""
     declare -A column_counts
     declare -a card_list
 
-    while IFS='|' read -r card title column status created start done time commits; do
+    while IFS='|' read -r card status title column created start ended time_spent commits assigned estimate; do
         card=$(echo "$card" | xargs)
+        status=$(echo "$status" | xargs)
         title=$(echo "$title" | xargs)
         column=$(echo "$column" | xargs)
-        status=$(echo "$status" | xargs)
         created=$(echo "$created" | xargs)
         start=$(echo "$start" | xargs)
-        done=$(echo "$done" | xargs)
-        time=$(echo "$time" | xargs)
+        ended=$(echo "$ended" | xargs)
+        time_spent=$(echo "$time_spent" | xargs)
         commits=$(echo "$commits" | xargs)
+        assigned=$(echo "$assigned" | xargs)
+        estimate=$(echo "$estimate" | xargs)
 
         total_cards=$((total_cards + 1))
         column_counts["$column"]=$((${column_counts["$column"]:-0} + 1))
@@ -61,23 +65,38 @@ __pm_report() {
             project_start_date="$created"
         fi
 
+        # Parse time_spent
+        local time_days=$(echo "$time_spent" | awk '{print $1}' | sed 's/d//')
+        local time_hours=$(echo "$time_spent" | awk '{print $2}' | sed 's/h//')
+        [[ -z "$time_days" ]] && time_days=0
+        [[ -z "$time_hours" ]] && time_hours=0
+        local total_time_hours=$((time_days * 24 + time_hours))
+        total_time_spent=$((total_time_spent + total_time_hours))
+
+        # Parse estimate
+        if [[ "$estimate" != "-" ]]; then
+            local est_val=$(echo "$estimate" | sed 's/[a-zA-Z]//g')
+            [[ -z "$est_val" ]] && est_val=0
+            total_estimate=$((total_estimate + est_val))
+        fi
+
         case "$status" in
             DONE)
                 done_cards=$((done_cards + 1))
-                if [ -z "$project_end_date" ] || [[ "$done" > "$project_end_date" ]]; then
-                    project_end_date="$done"
+                if [ -z "$project_end_date" ] || [[ "$ended" > "$project_end_date" ]]; then
+                    project_end_date="$ended"
                 fi
                 if [[ "$commits" =~ ^[0-9]+$ ]]; then
                     done_commits=$((done_commits + commits))
                 fi
                 ;;
-            START)
+            "In Progress"|START)
                 ongoing_cards=$((ongoing_cards + 1))
                 if [[ "$commits" =~ ^[0-9]+$ ]]; then
                     ongoing_commits=$((ongoing_commits + commits))
                 fi
                 ;;
-            NA)
+            TODO)
                 not_started_cards=$((not_started_cards + 1))
                 ;;
         esac
@@ -86,7 +105,7 @@ __pm_report() {
             total_commits=$((total_commits + commits))
         fi
 
-        card_list+=("$card|$title|$column|$status|$time|$commits")
+        card_list+=("$card|$status|$title|$column|$time_spent|$commits|$estimate|$assigned")
     done <<< "$cards_data"
 
     # Calculate project duration
@@ -108,6 +127,20 @@ __pm_report() {
         printf "  ⚙ Ongoing:     %2d / %2d  (%3d%%)\n" "$ongoing_cards" "$total_cards" "$(( ongoing_cards * 100 / total_cards ))"
         printf "  ○ Not Started: %2d / %2d  (%3d%%)\n" "$not_started_cards" "$total_cards" "$(( not_started_cards * 100 / total_cards ))"
         echo ""
+        echo "Time & Estimation:"
+        printf "  Total Time:     %d hours\n" "$total_time_spent"
+        printf "  Total Estimate: %d hours\n" "$total_estimate"
+        if [[ $total_estimate -gt 0 ]]; then
+            local variance=$((total_time_spent - total_estimate))
+            if [[ $variance -gt 0 ]]; then
+                printf "  Status:         ⚠️  DELAYED by %d hours\n" "$variance"
+            elif [[ $variance -lt 0 ]]; then
+                printf "  Status:         ✓ AHEAD by %d hours\n" "$((variance * -1))"
+            else
+                printf "  Status:         ✓ ON TRACK\n"
+            fi
+        fi
+        echo ""
         echo "Commits:"
         printf "  Total:   %d commits\n" "$total_commits"
         printf "  Done:    %d commits\n" "$done_commits"
@@ -119,19 +152,21 @@ __pm_report() {
     __report_details() {
         echo "CARDS ACTIVITY"
         echo ""
-        printf "%-6s | %-35s | %8s | %s\n" "Card" "Title" "Time" "Commits"
-        printf "%-6s | %-35s | %8s | %s\n" "------" "---------------------------------" "--------" "-------"
+        printf "%-4s | %-8s | %-30s | %10s | %10s | %10s\n" "Card" "Status" "Title" "Time" "Estimate" "Commits"
+        printf "%-4s-+-%-8s-+-%-30s-+-%-10s-+-%-10s-+-%-10s\n" "----" "--------" "------------------------------" "----------" "----------" "----------"
         
         for entry in "${card_list[@]}"; do
-            IFS='|' read -r card title column status time commits <<< "$entry"
-            printf "%-6s | %-35s | %8s | %s\n" "$card" "${title:0:35}" "$time" "$commits"
+            IFS='|' read -r card status title column time_spent commits estimate assigned <<< "$entry"
+            local est_display="$estimate"
+            [[ "$estimate" == "-" ]] && est_display="-"
+            printf "%-4s | %-8s | %-30s | %10s | %10s | %10s\n" "$card" "$status" "${title:0:30}" "$time_spent" "$est_display" "$commits"
         done | sort -k1
         echo ""
 
         echo "COLUMN BREAKDOWN"
         echo ""
         for col in "${!column_counts[@]}"; do
-            printf "  %-20s: %2d cards\n" "$col" "${column_counts[$col]}"
+            printf "  %-25s: %2d cards\n" "$col" "${column_counts[$col]}"
         done | sort
         echo ""
     }

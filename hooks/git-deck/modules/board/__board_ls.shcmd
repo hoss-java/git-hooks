@@ -57,6 +57,24 @@ __board_ls() {
                     return_value=0
                 fi
             done
+        elif [ "$option_type" == 'selected' ]; then
+            for board in "$DECK_DIR"/*; do
+                if [ -d "$board" ] && [ -f "$board/.id" ]; then
+                    local board_name=$(basename "$board")
+                    local board_id=$(cat "$board/.id")
+
+                    if [ "$board_id" = "$selected_id" ]; then
+                        if [ "$option_output" == 'id' ]; then
+                            echo "$board_id"
+                        elif [ "$option_output" == 'name' ]; then
+                            echo "$board_name"
+                        else
+                            echo " $board_id: $board_name"
+                        fi
+                    fi
+                    return_value=0
+                fi
+            done
         fi
     else
         [ "$option_output" == 'full' ] && \

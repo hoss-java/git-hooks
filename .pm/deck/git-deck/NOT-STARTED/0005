@@ -1,7 +1,22 @@
 ---
+#...
+# Git-deck card header
+# OBS! DON'T REMOVE CARD HEADERS
+#...
 Title: Connect git-deck and git hooks message.
 Tags: git-deck
+Creator:
+AssignedTo:
+Priority:
+Status: TODO
+Estimate: 5h
+DueDate:
+# Time tracker settings
+CreateAt:
+StartAt:
+EndAt:
 ---
+
 The goal of this card is to improve gut-deck integration with git.
 
 # DOD (definition of done):
@@ -14,11 +29,11 @@ All findings are documented
 - [x] 1. Add check cards' ID to git message hooks
 - [x] 2. Add option to skip commit message format
 - [x] 3. Auto-complete for commit messages
-- [ ] 4. Auto add git-deck changes
-- [ ] 5. Add auto-tag
+- [x] 4. Auto add git-deck changes
+- [x] 5. Add auto-tag
 - [x] 6. Add other items to header (creator, user, date, start-time, done-time...)
-- [ ] 7. Auto time tracker
-- [ ] 8. Plan to make it possible to use as Scrum board
+- [x] 7. Auto time tracker
+- [-] 8. Plan to make it possible to use as Scrum board
 - [x] 9. Add a flag to enable/disable adding changeId
 
 # Reports:

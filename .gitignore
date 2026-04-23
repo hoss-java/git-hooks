@@ -4,15 +4,27 @@
 /node_modules
 /.pnp
 .pnp.js
+.failed_tests
 
 # testing
 /coverage
 
 # production
 build/
+**/build/
 bin/
+**/bin/
+.bin/
+**/.bin/
 pack/
+**/pack/
 target/
+.workingon/
+**/.workingon/
+.chat/
+**/.chat/
+**/target/
+
 
 # misc
 *.pyc

@@ -7,8 +7,13 @@ Title: Improve git hooks
 Tags:
 Creator:
 AssignedTo:
+Priority:
+Status:
+Estimate: 
+DueDate:
 # Time tracker settings
-tartAt:
+CreateAt:
+StartAt:
 EndAt:
 ---
 The goal of this card is to improve Git hooks by separating the directives collector from the message formatter.

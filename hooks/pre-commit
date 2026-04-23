@@ -13,9 +13,18 @@ else
     commitCheckFlag=true
 fi
 
-COMMIT_MSG_DIRECTIVES_SHINC=.git/hooks/commit-msg-directives.shinc
-if [ -f "$COMMIT_MSG_DIRECTIVES_SHINC" ]; then
-    . ${COMMIT_MSG_DIRECTIVES_SHINC}
+# Detect if we're in a merge or rebase in progress
+if [ -f "$GIT_DIR/MERGE_HEAD" ] || [ -f "$GIT_DIR/REBASE_MERGE_HEAD" ] || [ -f "$GIT_DIR/REBASE_APPLY_HEAD" ]; then
+    isMergeInProgress=true
+else
+    isMergeInProgress=false
+fi
+
+if [ "$isMergeInProgress" = "true" ]; then
+    COMMIT_MSG_DIRECTIVES_SHINC=.git/hooks/commit-msg-directives.shinc
+    if [ -f "$COMMIT_MSG_DIRECTIVES_SHINC" ]; then
+        . ${COMMIT_MSG_DIRECTIVES_SHINC}
+    fi
 fi
 #---------------------------------------
 
