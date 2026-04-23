@@ -60,6 +60,8 @@ if [ "$commit_msg_line_count" -gt 0 ] && [ -n "$(echo "$commit_msg_extralines" |
                     echo "directive: --notest. Skipping tests and commit checks."
                     commitCheckFlag=false
                     ;;
+                "--merge")
+                    ;;
                 # Add more cases for additional commands as needed
                 *)
                     echo "Unknown directive: $directive with parameters: '${params}'."

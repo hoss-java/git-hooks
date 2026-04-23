@@ -34,6 +34,17 @@ if test ! -f "$1" ; then
   exit 1
 fi
 
+
+# Check if this is a commit --amend by looking for existing Change-Id
+if grep -q "^Change-Id:" "$1" ; then
+    # This is an amendment to an existing commit
+    hasChangeID=true
+else
+    # This is a new commit
+    hasChangeID=false
+fi
+
+
 #---------------------------------------
 # Import default settings and message formater
 GIT_ROOT="$(git rev-parse --show-toplevel)"

@@ -1,6 +1,68 @@
-# Move a card to a column on the current default board
 __card_mv() {
     local return_value=1
+
+    __apply_template_replacements() {
+        local file="$1"
+        shift
+        
+        while [[ $# -gt 0 ]]; do
+            local placeholder="$1"
+            local value="$2"
+            sed -i "s|${placeholder}|${value}|g" "$file"
+            shift 2
+        done
+    }
+
+    __apply_header_replacements() {
+        local file="$1"
+        shift
+        
+        while [[ $# -gt 0 ]]; do
+            local key="$1"
+            local value="$2"
+            sed -i "/^---$/,/^---$/{s/^[[:space:]]*${key}:[[:space:]]*.*/${key}: ${value}/;t;s/^[[:space:]]*${key}:$/${key}: ${value}/;}" "$file"
+            shift 2
+        done
+    }
+
+    __get_column_status() {
+        local col_name="$1"
+        git deck column ls --type START --output name | grep -q "^${col_name}$" && echo "START" && return
+        git deck column ls --type DONE --output name | grep -q "^${col_name}$" && echo "DONE" && return
+        echo ""
+    }
+
+    __update_card_on_move() {
+        local file="$1"
+        local new_column_status="$2"
+        local git_user="$(git config user.name)"
+        local now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+        case "$new_column_status" in
+            START)
+                __apply_header_replacements "$file" \
+                    "Status" "START" \
+                    "AssignedTo" "$git_user"
+                # Set StartAt only if empty
+                if ! grep -q "^StartAt:[[:space:]]*[^[:space:]]" "$file"; then
+                    __apply_header_replacements "$file" "StartAt" "$now"
+                fi
+                ;;
+            DONE)
+                __apply_header_replacements "$file" \
+                    "Status" "DONE" \
+                    "EndAt" "$now" \
+                    "AssignedTo" "$git_user"
+                # Set StartAt only if empty
+                if ! grep -q "^StartAt:[[:space:]]*[^[:space:]]" "$file"; then
+                    __apply_header_replacements "$file" "StartAt" "$now"
+                fi
+                ;;
+            *)
+                __apply_header_replacements "$file" "Status" "TODO"
+                ;;
+        esac
+    }
 
     ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
         echo "Error: No board selected." && \
@@ -21,10 +83,8 @@ __card_mv() {
     local column_name="$2"
     shift 2
 
-    # Default values for options
     local option_force=false
     
-    # Manual option parsing - handles any order
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -f|--force)
@@ -41,22 +101,26 @@ __card_mv() {
         if [ -f "$card" ]; then
             local card_name=$(basename "$card")
             local card_path=$(dirname "$card")
-            local card_colunm=$(basename "$(dirname "$card")")
+            local card_column=$(basename "$(dirname "$card")")
 
-            # Print card title/info
             echo ">$(get_card_info "$card")"
 
-            if [ "$column_name" != "$card_colunm" ]; then
+            if [ "$column_name" != "$card_column" ]; then
                 local new_column="$DECK_DIR/$DEFAULT_BOARD_NAME/$column_name"
                 if [ -d "$new_column" ]; then
                     mv "$card" "$new_column/"
+                    
+                    local new_card_file="$new_column/$card_name"
+                    local new_status=$(__get_column_status "$column_name")
+                    __update_card_on_move "$new_card_file" "$new_status"
+                    
                     return_value=$?
                     echo "Card '$card_name' was moved to '$column_name'."
                 else
                     echo "Error: Target column '$column_name' does not exist."
                 fi
             else
-                echo "Card '$card_name' is already in column '$card_colunm'."
+                echo "Card '$card_name' is already in column '$card_column'."
             fi
             break
         else

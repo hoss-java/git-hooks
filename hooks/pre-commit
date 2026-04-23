@@ -13,6 +13,7 @@ else
     commitCheckFlag=true
 fi
 
+
 COMMIT_MSG_DIRECTIVES_SHINC=.git/hooks/commit-msg-directives.shinc
 if [ -f "$COMMIT_MSG_DIRECTIVES_SHINC" ]; then
     . ${COMMIT_MSG_DIRECTIVES_SHINC}

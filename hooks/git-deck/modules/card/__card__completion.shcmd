@@ -103,14 +103,14 @@ __card__completion(){
     # Autocompletion for 'detail' command
     if [[ "${_COMP_WORDS[3]}" == "detail" ]]; then
         __param_completion "detail" \
-            "--output" "full status created ongoing done timespent commits title" \
-            "-o" "full status created ongoing done timespent commits title" \
+            "--output" "full short default" \
+            "-o" "full short default" \
             "--column" "$(git deck column ls --output name)" \
             "-c" "$(git deck column ls --output name)" \
             "--type" "$(git deck column detail --output type | sort -u)" \
             "-t" "$(git deck column detail --output type | sort -u)" \
-            "--format" "plain yaml json screen text" \
-            "-f" "plain yaml json screen text"
+            "--format" "plain yaml json screen" \
+            "-f" "plain yaml json screen"
         return
     fi
 

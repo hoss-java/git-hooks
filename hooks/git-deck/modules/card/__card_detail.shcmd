@@ -1,358 +1,379 @@
-# Show detailed information about cards
 __card_detail() {
     local return_value=1
     
-    # Default values for options
-    local option_output='full'
+    local option_output='default'
     local option_column=''
     local option_type=''
-    local option_format='text'
+    local option_format='screen'
     
-    # Manual option parsing - handles any order
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -o|--output)
-                option_output="$2"
-                shift 2
-                ;;
-            -c|--column)
-                option_column="$2"
-                shift 2
-                ;;
-            -t|--type)
-                option_type="$2"
-                shift 2
-                ;;
-            -f|--format)
-                option_format="$2"
-                shift 2
-                ;;
-            *)
-                shift
-                ;;
+            -o|--output) option_output="$2"; shift 2 ;;
+            -c|--column) option_column="$2"; shift 2 ;;
+            -t|--type) option_type="$2"; shift 2 ;;
+            -f|--format) option_format="$2"; shift 2 ;;
+            *) shift ;;
         esac
     done
 
     ([ "$DEFAULT_BOARD" -lt 1 ] || [ -z "$DEFAULT_BOARD_NAME" ]) && \
-        echo "Error: No board selected." && \
-        return 1
+        echo "Error: No board selected." && return 1
 
-    # Unified output formatter
-    __format_card_output() {
-        local format=$1
-        local card=$2
-        local column=$3
-        local created_date=$4
-        local status=$5
-        local moved_to_start_date=$6
-        local moved_to_done_date=$7
-        local time_spent=$8
-        local commit_count=$9
-        local card_title=${10}
-        local column_color=${11}
+    # Helper: Normalize date to YYYY-MM-DD HH:MM format
+    __normalize_date() {
+        local date_str="$1"
         
-        case "$format" in
-            plain)
-                echo "$card | $card_title | $column | $status | $created_date | $moved_to_start_date | $moved_to_done_date | $time_spent | $commit_count"
-                ;;
-            yaml)
-                echo "  - card_id: $card"
-                echo "    title: $card_title"
-                echo "    column: $column"
-                echo "    status: $status"
-                echo "    created: $created_date"
-                echo "    moved_to_start: $moved_to_start_date"
-                echo "    moved_to_done: $moved_to_done_date"
-                echo "    time_spent: $time_spent"
-                echo "    commits: $commit_count"
-                ;;
-            json)
-                card_title="${card_title//\"/\\\"}"
-                printf '{"card_id":"%s","title":"%s","column":"%s","status":"%s","created":"%s","moved_to_start":"%s","moved_to_done":"%s","time_spent":"%s","commits":%s}' \
-                    "$card" "$card_title" "$column" "$status" "$created_date" "$moved_to_start_date" "$moved_to_done_date" "$time_spent" "$commit_count"
-                ;;
-            screen)
-                printf "%-8s | %-20s | %-15s | %-8s | %-12s | %s\n" \
-                    "$card" \
-                    "${card_title:0:20}" \
-                    "${column:0:15}" \
-                    "$status" \
-                    "$time_spent" \
-                    "$commit_count commits"
-                ;;
-        esac
-    }
-
-    # Helper function: Get card status
-    __get_card_column() {
-        local card_num=$1
-        local board_path="$DECK_DIR/$DEFAULT_BOARD_NAME"
+        if [[ -z "$date_str" || "$date_str" == "UNKNOWN" || "$date_str" == "-" ]]; then
+            echo "-"
+            return
+        fi
         
-        local file=$(find "$board_path" -maxdepth 2 -name "$card_num" -type f | head -1)
-        
-        if [[ -f "$file" ]]; then
-            basename $(dirname "$file")
+        # Try to parse and normalize
+        local timestamp=$(date -d "$date_str" +%s 2>/dev/null || echo "0")
+        if [[ $timestamp -ne 0 ]]; then
+            date -u -d "@$timestamp" +%Y-%m-%d\ %H:%M 2>/dev/null || echo "-"
         else
             echo "-"
         fi
     }
 
-    # Helper function: Get column color
-    __get_column_color() {
-        local column_name=$1
-        local column_details=$(git deck column detail --name "$column_name" --output full)
+    # Helper: Extract date from card header
+    __extract_header_date() {
+        local file="$1"
+        local field="$2"
         
-        if [[ -z "$column_details" ]]; then
-            echo ""
-            return
-        fi
-        
-        echo "$column_details" | grep "Color:" | awk -F': ' '{print $2}'
-    }
-
-    # Helper function: Find card created date
-    __find_card_created_date() {
-        local card=$1
-        
-        # Find the FIRST commit where card file appears
-        local commit=$(git log --follow --format='%H' --reverse -- ".pm/deck/$DEFAULT_BOARD_NAME"/*/"${card}" 2>/dev/null | head -1)
-        
-        if [[ -n "$commit" ]]; then
-            git log -1 --format='%ai' "$commit" 2>/dev/null | sed 's/ [+-][0-9]\{4\}$//'
-        else
-            # Fallback: check file modification time
-            for file in "$DECK_DIR/$DEFAULT_BOARD_NAME"/*/"${card}"; do
-                if [[ -f "$file" ]]; then
-                    stat -c %y "$file" 2>/dev/null | cut -d' ' -f1,2 | head -c 19
-                    echo ""
-                    return 0
-                fi
-            done
-            echo "UNKNOWN"
+        if [[ -f "$file" ]]; then
+            grep "^${field}:" "$file" | head -1 | sed "s/^${field}:[[:space:]]*//;s/[[:space:]]*$//"
         fi
     }
 
-    # Helper function: Find card moved to column date
-    __find_card_moved_to_column_date() {
+    # Helper: Find date with fallback methods
+    __find_card_date() {
         local card=$1
-        local column=$2
-        local type=$3  # START or DONE
+        local field=$2
+        local type=$3
         
-        local columns=$(git deck column detail --output name --type "$type" 2>/dev/null)
+        local board_path="$DECK_DIR/$DEFAULT_BOARD_NAME"
+        local card_file=$(find "$board_path" -name "$card" -type f | head -1)
         
-        if [[ -z "$columns" ]]; then
-            echo "UNKNOWN"
-            return
-        fi
-        
-        local all_times=()
-        
-        for column in $columns; do      
-            # Git time
-            local git_time=$(git log --all --format='%ai' -- ".pm/deck/$DEFAULT_BOARD_NAME/${column}/${card}" 2>/dev/null | tail -1 | cut -d' ' -f1,2 | cut -d':' -f1,2)
-            
-            # Filesystem time
-            local board_path="$DECK_DIR/$DEFAULT_BOARD_NAME"
-            local file=$(find "$board_path/$column" -name "$card" -type f 2>/dev/null)
-            if [[ -f "$file" ]]; then
-                local fs_time=$(stat -c %y "$file" 2>/dev/null | cut -d' ' -f1,2 | cut -d':' -f1,2)
-                all_times+=("$fs_time")
+        # Method 1: Check card header
+        if [[ -f "$card_file" ]]; then
+            local header_date=$(__extract_header_date "$card_file" "$field")
+            if [[ -n "$header_date" && "$header_date" != "" ]]; then
+                __normalize_date "$header_date"
+                return 0
             fi
-        done
-        
-        if [[ ${#all_times[@]} -eq 0 ]]; then
-            echo "UNKNOWN"
-        elif [[ "$type" == "START" ]]; then
-            local result=$(printf '%s\n' "${all_times[@]}" | sort | head -1)
-            echo "$result"
-        else
-            local result=$(printf '%s\n' "${all_times[@]}" | sort -r | head -1)
-            echo "$result"
         fi
+        
+        # Method 2: Git log for moved dates (only for StartAt and EndAt)
+        if [[ "$field" == "StartAt" || "$field" == "EndAt" ]] && [[ -n "$type" ]]; then
+            local columns=$(git deck column detail --output name --type "$type" 2>/dev/null)
+            local all_times=()
+            
+            for col in $columns; do
+                local git_time=$(git log --all --format='%aI' -- ".pm/deck/$DEFAULT_BOARD_NAME/${col}/${card}" 2>/dev/null | tail -1)
+                [[ -n "$git_time" ]] && all_times+=("$git_time")
+            done
+            
+            if [[ ${#all_times[@]} -gt 0 ]]; then
+                local selected_time
+                if [[ "$type" == "START" ]]; then
+                    selected_time=$(printf '%s\n' "${all_times[@]}" | sort | head -1)
+                else
+                    selected_time=$(printf '%s\n' "${all_times[@]}" | sort -r | head -1)
+                fi
+                __normalize_date "$selected_time"
+                return 0
+            fi
+        fi
+        
+        # Method 3: Filesystem time (ONLY for CreateAt, not for EndAt/StartAt)
+        if [[ "$field" == "CreateAt" ]] && [[ -f "$card_file" ]]; then
+            local fs_time=$(stat -c %y "$card_file" 2>/dev/null | cut -d' ' -f1,2)
+            __normalize_date "$fs_time"
+            return 0
+        fi
+        
+        echo "-"
     }
 
-    # Helper function: Calculate time between two dates
+
+    # Helper: Calculate time between dates
     __calculate_time_between() {
         local date1=$1
         local date2=$2
+        local created_date=$3
         
-        if [[ "$date1" == "UNKNOWN" ]] || [[ "$date1" == "-" ]]; then
-            echo "N/A"
+        
+        # If both started and created are missing, can't calculate
+        if [[ ("$date1" == "-" || -z "$date1") && ("$created_date" == "-" || -z "$created_date") ]]; then
+            echo "-"
             return
         fi
         
-        # If date2 is not provided or is "-", use current time
-        if [[ -z "$date2" ]] || [[ "$date2" == "-" ]] || [[ "$date2" == "NA" ]]; then
-            date2=$(date '+%Y-%m-%d %H:%M:%S')
+        # If started time is not defined, use created time as start
+        if [[ "$date1" == "-" ]] || [[ -z "$date1" ]]; then
+            date1="$created_date"
         fi
         
-        if [[ "$date2" == "UNKNOWN" ]]; then
-            echo "N/A"
-            return
+        # If ended time is not defined or empty, use current time (for calculation only)
+        if [[ -z "$date2" ]] || [[ "$date2" == "-" ]]; then
+            date2=$(date -u +%Y-%m-%dT%H:%M:%SZ)
         fi
         
-        # Remove timezone info (everything after +/- offset)
-        date1=$(echo "$date1" | sed 's/ [+-][0-9]\{4\}$//')
-        date2=$(echo "$date2" | sed 's/ [+-][0-9]\{4\}$//')
-        
-        local timestamp1=$(date -d "$date1" +%s 2>/dev/null || echo "0")
-        local timestamp2=$(date -d "$date2" +%s 2>/dev/null || echo "0")
-        
+        local timestamp1=$(date -d "${date1}" +%s 2>/dev/null || echo "0")
+        local timestamp2=$(date -d "${date2}" +%s 2>/dev/null || echo "0")
+            
         if [[ $timestamp1 -eq 0 ]] || [[ $timestamp2 -eq 0 ]]; then
-            echo "N/A"
-        else
-            local diff=$((timestamp2 - timestamp1))
-            local days=$((diff / 86400))
-            local hours=$(((diff % 86400) / 3600))
-            echo "${days}d ${hours}h"
+            echo "-"
+            return
         fi
+        
+        local diff=$((timestamp2 - timestamp1))
+        local days=$((diff / 86400))
+        local hours=$(((diff % 86400) / 3600))
+        
+        echo "${days}d ${hours}h"
     }
 
-    # Helper function: Check if git commit is assigned to card
-    __find_card_commits() {
-        local card=$1
+
+
+
+    # Output formatter
+    __format_card_output() {
+        local format=$1
+        local card=$2
+        local output_set=$3
+        local title=$4
+        local column=$5
+        local status=$6
+        local created=$7
+        local started=$8
+        local ended=$9
+        local time_spent=${10}
+        local commits=${11}
+        local assigned=${12}
+        local estimate=${13}
         
-        # Search for commit messages containing card reference (e.g., [B001-C0001])
-        local board_id=$((10#$DEFAULT_BOARD))
-        local card_id=$((10#$card))
-        local card_ref="B$(printf "%03d" "$board_id")-C$(printf "%04d" "$card_id")"
-        
-        local commits=$(git log --all --format='%H' --grep="\[$card_ref\]" 2>/dev/null | wc -l)
-        echo "$commits"
+        case "$format" in
+            plain)
+                case "$output_set" in
+                    short)
+                        echo "$card | $title"
+                        ;;
+                    full)
+                        echo "$card | $status | $title | $column | $created | $started | $ended | $time_spent | $commits | $assigned | $estimate"                        
+                        ;;
+                    *)
+                        echo "$card | $status | $created | $started | $ended | $time_spent"
+                        ;;
+                esac
+                ;;
+            yaml)
+                echo "  - card: $card"
+                echo "    title: $title"
+                [[ "$output_set" != "short" ]] && echo "    column: $column"
+                [[ "$output_set" != "short" ]] && echo "    status: $status"
+                echo "    created: $created"
+                [[ "$output_set" == "full" ]] && echo "    started: $started"
+                [[ "$output_set" == "full" ]] && echo "    ended: $ended"
+                [[ "$output_set" != "short" ]] && echo "    time_spent: $time_spent"
+                [[ "$output_set" != "short" ]] && echo "    commits: $commits"
+                [[ "$output_set" == "full" ]] && echo "    assigned: $assigned"
+                [[ "$output_set" == "full" ]] && echo "    estimate: $estimate"
+                ;;
+            json)
+                printf '{"card":"%s","title":"%s"' "$card" "${title//\"/\\\"}"
+                [[ "$output_set" != "short" ]] && printf ',"column":"%s","status":"%s"' "$column" "$status"
+                printf ',"created":"%s"' "$created"
+                [[ "$output_set" == "full" ]] && printf ',"started":"%s","ended":"%s","assigned":"%s","estimate":"%s"' "$started" "$ended" "$assigned" "$estimate"
+                [[ "$output_set" != "short" ]] && printf ',"time_spent":"%s","commits":%s' "$time_spent" "$commits"
+                printf '}'
+                ;;
+            screen)
+                case "$output_set" in
+                    short)
+                        printf "%-4s | %-40s\n" "$card" "$title"
+                        ;;
+                    full)
+                        local status_icon=""
+                        if [[ "$estimate" != "-" ]]; then
+                            local time_val=$(echo "$time_spent" | awk '{print $1}' | sed 's/d//')
+                            local estimate_val=$(echo "$estimate" | sed 's/[a-zA-Z]//g')
+                            if [[ $time_val -gt $estimate_val ]]; then
+                                status_icon="⚠️ DELAYED"
+                            elif [[ $time_val -eq $estimate_val ]]; then
+                                status_icon="✓ ON_TRACK"
+                            else
+                                status_icon="✓ OK"
+                            fi
+                        fi
+                        printf "%-4s | %-8s | %-30s | %-12s | %-16s | %-16s | %-16s | %-10s | %-8s | %-10s | %-15s\n" \
+                            "$card" "$status" "$title" "$column" "$created" "$started" "$ended" "$time_spent" "$commits" "$assigned" "$estimate $status_icon"
+                        ;;
+                    *)
+                        local status_icon=""
+                        if [[ "$estimate" != "-" ]]; then
+                            local time_val=$(echo "$time_spent" | awk '{print $1}' | sed 's/d//')
+                            local estimate_val=$(echo "$estimate" | sed 's/[a-zA-Z]//g')
+                            if [[ $time_val -gt $estimate_val ]]; then
+                                status_icon="⚠️"
+                            fi
+                        fi
+                        printf "%-4s | %-8s | %-30s | %-16s | %-16s | %-10s | %-10s\n" \
+                            "$card" "$status" "$title" "$created" "$started" "$time_spent" "$estimate $status_icon"
+                        ;;
+                esac
+                ;;
+        esac
     }
 
-    # Helper function: Get card title
+    # Helpers: Extract card info
+    __get_card_column() {
+        local card_num=$1
+        local board_path="$DECK_DIR/$DEFAULT_BOARD_NAME"
+        local file=$(find "$board_path" -maxdepth 2 -name "$card_num" -type f | head -1)
+        [[ -f "$file" ]] && basename $(dirname "$file") || echo "-"
+    }
+
     __get_card_title() {
+        local card=$1
+        local max_length=${2:-}
+        local card_path="$DECK_DIR/$DEFAULT_BOARD_NAME"
+        
+        for file in "$card_path"/*/"${card}"; do
+            if [[ -f "$file" ]]; then
+                local title=$(grep "^Title:" "$file" | head -1 | sed 's/^Title:[[:space:]]*//;s/[[:space:]]*$//')
+                if [[ -n "$max_length" && ${#title} -gt $max_length ]]; then
+                    echo "${title:0:$((max_length - 2))}.."
+                else
+                    echo "$title"
+                fi
+                return 0
+            fi
+        done
+        echo "-"
+    }
+
+    __get_card_estimate() {
         local card=$1
         local card_path="$DECK_DIR/$DEFAULT_BOARD_NAME"
         
         for file in "$card_path"/*/"${card}"; do
             if [[ -f "$file" ]]; then
-                eval "$(extract_md_headers "$file")"
-                for k in "${!headers[@]}"; do
-                    if [[ "${k,,}" == "title" ]]; then
-                        echo "${headers[$k]}"
-                        return 0
-                    fi
-                done
+                local est=$(grep "^Estimate:" "$file" | head -1 | sed 's/^Estimate:[[:space:]]*//;s/[[:space:]]*$//')
+                [[ -n "$est" ]] && echo "$est" && return 0
             fi
         done
-        echo "No title"
+        echo "-"
     }
 
-    # Build __card_ls arguments dynamically
+    __get_card_assigned() {
+        local card=$1
+        local card_path="$DECK_DIR/$DEFAULT_BOARD_NAME"
+        
+        for file in "$card_path"/*/"${card}"; do
+            if [[ -f "$file" ]]; then
+                local asg=$(grep "^AssignedTo:" "$file" | head -1 | sed 's/^AssignedTo:[[:space:]]*//;s/[[:space:]]*$//')
+                [[ -n "$asg" ]] && echo "$asg" && return 0
+            fi
+        done
+        echo "-"
+    }
+
+    __find_card_commits() {
+        local card=$1
+        local board_id=$((10#$DEFAULT_BOARD))
+        local card_id=$((10#$card))
+        local card_ref="B$(printf "%03d" "$board_id")-C$(printf "%04d" "$card_id")"
+        git log --all --format='%H' --grep="\[$card_ref\]" 2>/dev/null | wc -l
+    }
+
+    # Main logic
     local card_ls_args="--output short"
     [[ -n "$option_column" ]] && card_ls_args="$card_ls_args --column $option_column"
     [[ -n "$option_type" ]] && card_ls_args="$card_ls_args --type $option_type"
     
-    # Get cards to process using __card_ls with same filters
     local cards_to_process=$(git deck card ls $card_ls_args)
     
-    if [[ -z "$cards_to_process" ]]; then
-        [ "$option_output" == 'full' ] && echo "No cards found."
-        return $return_value
-    fi
+    [[ -z "$cards_to_process" ]] && [ "$option_output" == 'full' ] && echo "No cards found." && return $return_value
 
-    if [ "$option_output" == 'full' ] && [ "$option_format" == 'text' ]; then
-        echo "Card Details:"
-        echo ""
-    fi
+    local output_set="defualt"
+    [[ "$option_output" == "short" ]] && output_set="short"
+    [[ "$option_output" == "full" ]] && output_set="full"
+    #[[ "$option_output" =~ ^(title|column|created|ongoing|done|timespent|commits)$ ]] && output_set="single"
 
-    # Get all START and DONE column names
-    local start_columns=$(git deck column detail --output name --type START 2>/dev/null)
-    local done_columns=$(git deck column detail --output name --type DONE 2>/dev/null)
-
-    # Initialize format wrappers
-    if [ "$option_format" == 'json' ]; then
-        echo "["
-    elif [ "$option_format" == 'yaml' ]; then
-        echo "cards:"
-    elif [ "$option_format" == 'screen' ]; then
-        printf "%-8s | %-20s | %-15s | %-8s | %-12s | %s\n" \
-            "Card ID" "Title" "Column" "Status" "Time Spent" "Commits"
-        printf "%-8s-+-%-20s-+-%-15s-+-%-8s-+-%-12s-+-----------\n" \
-            "--------" "--------------------" "---------------" "--------" "------------"
+    [[ "$option_format" == 'json' ]] && echo "["
+    [[ "$option_format" == 'yaml' ]] && echo "cards:"
+    
+    if [[ "$option_format" == 'screen' ]]; then
+        case "$output_set" in
+            short)
+                printf "%-4s | %-40s\n" "Card" "Title"
+                printf "%-4s-+-%-40s\n" "----" "----------------------------------------"
+                ;;
+            full)
+                printf "%-4s | %-8s | %-30s | %-12s | %-16s | %-16s | %-16s | %-10s | %-8s | %-10s | %-15s\n" \
+                    "Card" "Status" "Title" "Column" "Created" "Started" "Ended" "Time" "Commits" "Assigned" "Estimate"
+                printf "%-4s-+-%-8s-+-%-30s-+-%-12s-+-%-16s-+-%-16s-+-%-16s-+-%-10s-+-%-8s-+-%-10s-+-%-15s\n" \
+                    "----" "--------" "------------------------------" "------------" "----------------" "----------------" "----------------" "----------" "--------" "----------" "---------------"
+                ;;
+            *)
+                printf "%-4s | %-8s | %-30s | %-16s | %-16s | %-10s | %-10s\n" \
+                    "Card" "Status" "Title" "Created" "Started" "Time" "Estimate"
+                printf "%-4s-+-%-8s-+-%-30s-+-%-16s-+-%-16s-+-%-10s-+-%-10s\n" \
+                    "----" "--------" "------------------------------" "----------------" "----------------" "----------" "----------"
+                ;;
+        esac
     fi
 
     local card_count=0
+    local total_cards=$(echo "$cards_to_process" | wc -w)
+
     for card in $cards_to_process; do
         local column=$(__get_card_column "$card")
-        local column_color=$(__get_column_color "$column")
-        local created_date=$(__find_card_created_date "$card")
-        local status="NA"
-        if echo "$start_columns" | grep -q "^$column$"; then
-            status="START"
-        elif echo "$done_columns" | grep -q "^$column$"; then
-            status="DONE"
-        fi
-
-        local moved_to_start_date="-"
-        local moved_to_done_date="-"
-
-        if [[ "$status" == "START" ]]; then
-            moved_to_start_date=$(__find_card_moved_to_column_date "$card" "START")
-        elif [[ "$status" == "DONE" ]]; then
-            moved_to_start_date=$(__find_card_moved_to_column_date "$card" "START")
-            moved_to_done_date=$(__find_card_moved_to_column_date "$card" "DONE")
-        fi
-
-        local time_spent=$(__calculate_time_between "$moved_to_start_date" "$moved_to_done_date")
+        local title_length=30
+        [[ "$option_format" == "screen" ]] && title=$(__get_card_title "$card" "$title_length") || title=$(__get_card_title "$card")
+        local estimate=$(__get_card_estimate "$card")
+        local assigned=$(__get_card_assigned "$card")
+        
+        local created_date=$(__find_card_date "$card" "CreateAt")
+        local started_date=$(__find_card_date "$card" "StartAt" "START")
+        local ended_date=$(__find_card_date "$card" "EndAt" "DONE")
+        
+        local status="TODO"
+        local start_columns=$(git deck column detail --output name --type START 2>/dev/null)
+        local done_columns=$(git deck column detail --output name --type DONE 2>/dev/null)
+        
+        echo "$start_columns" | grep -q "^$column$" && status="START"
+        echo "$done_columns" | grep -q "^$column$" && status="DONE"
+        
+        local time_spent=$(__calculate_time_between "$started_date" "$ended_date" "$created_date")
         local commit_count=$(__find_card_commits "$card")
-        local card_title=$(__get_card_title "$card")
         
-        # Format dates to be more readable
-        created_date=${created_date:-NA}
-        moved_to_start_date=${moved_to_start_date:-NA}
-        moved_to_done_date=${moved_to_done_date:-NA}
-        
-        if [ "$option_output" == 'column' ]; then
-            echo "$column"
-        elif [ "$option_output" == 'created' ]; then
-            echo "$created_date"
-        elif [ "$option_output" == 'ongoing' ]; then
-            echo "$moved_to_start_date"
-        elif [ "$option_output" == 'done' ]; then
-            echo "$moved_to_done_date"
-        elif [ "$option_output" == 'timespent' ]; then
-            echo "$time_spent"
-        elif [ "$option_output" == 'commits' ]; then
-            echo "$commit_count"
-        elif [ "$option_output" == 'title' ]; then
-            echo "$card_title"
-        else
-            # Format output based on format type
-            if [[ "$option_format" =~ ^(plain|yaml|json|screen)$ ]]; then
-                __format_card_output "$option_format" "$card" "$column" "$created_date" "$status" "$moved_to_start_date" "$moved_to_done_date" "$time_spent" "$commit_count" "$card_title" "$column_color"
+        case "$option_output" in
+            column) echo "$column" ;;
+            title) echo "$title" ;;
+            created) echo "$created_date" ;;
+            ongoing) echo "$started_date" ;;
+            done) echo "$ended_date" ;;
+            timespent) echo "$time_spent" ;;
+            commits) echo "$commit_count" ;;
+            *)
+                __format_card_output "$option_format" "$card" "$output_set" \
+                    "$title" "$column" "$status" "$created_date" "$started_date" "$ended_date" "$time_spent" "$commit_count" "$assigned" "$estimate"
                 
-                # Add separators for JSON
                 if [ "$option_format" == 'json' ]; then
                     card_count=$((card_count + 1))
-                    local total_cards=$(echo "$cards_to_process" | wc -w)
-                    if [ $card_count -lt $total_cards ]; then
-                        echo ","
-                    fi
+                    [[ $card_count -lt $total_cards ]] && echo ","
                 fi
-            else
-                # Full output with colors (original default)
-                echo_colored "${column_color},-" " $DEFAULT_BOARD_NAME/$column/$card - $card_title"
-                echo "  column: $column"
-                echo "  Status: $status"
-                echo "  Created: $created_date"
-                echo "  Moved to Ongoing: $moved_to_start_date"
-                echo "  Moved to Done: $moved_to_done_date"
-                echo "  Time Spent (Ongoing → Done): $time_spent"
-                echo "  Git Commits Assigned: $commit_count"
-                echo ""
-            fi
-        fi
+                ;;
+        esac
         
         return_value=0
     done
 
-    # Close format wrappers
-    if [ "$option_format" == 'json' ]; then
-        echo "]"
-    fi
+    [[ "$option_format" == 'json' ]] && echo "]"
     
     return $return_value
 }
