@@ -199,6 +199,22 @@ gantt
 > > * A file named `git-deck-completion.sh` is copied to the HOME folder of the current user and then the file is sourced via `.bashrc` and `.bash_profile`
 > </details>
 
+## 001-0007
+> **Fix issues on Time calculations.** ![status](https://img.shields.io/badge/status-DONE-brightgreen)
+> <details >
+>     <summary>Details</summary>
+> The goal of this card is to fix issues on time calculations.
+> 
+> # DOD (definition of done):
+> Reports and details shows spend times and estimations correctly
+> 
+> # TODO:
+> - [] 1.
+> 
+> # Reports:
+> *
+> </details>
+
 ## 001-0008
 > **Fix auto completion bug.** ![status](https://img.shields.io/badge/status-DONE-brightgreen)
 > <details >
@@ -217,6 +233,26 @@ gantt
 > * **Root Cause:** Duplicate `complete -F _git_deck_completion` statements in the script were overriding each other, causing the completion to fail outside the git root directory.
 > * **Solution:** Removed duplicate registrations, keeping only one registration per command (`git` and `deck`).
 > * **Result:** Completion now works consistently across all subdirectories within the git repository.
+> </details>
+
+## 001-0009
+> **Improve git hooks** ![status](https://img.shields.io/badge/status-DONE-brightgreen)
+> <details >
+>     <summary>Details</summary>
+> The goal of this card is to improve Git hooks by separating the directives collector from the message formatter.
+> 
+> # DOD (definition of done):
+> Directives collector has its own script.
+> All hooks and scripts are updated to use the new Directives collector.
+> 
+> # TODO:
+> - [x] 1. Move Directives collector from commit-msg-format.shinc to a new shinc (commit-msg-directives.shinc)
+> - [x] 2. Update commit-msg-format.shinc and commit-msg to use commit-msg-directives.shinc
+> - [x] 3. Add this system to other hooks such as pre-commit
+> - [x] 4. Update other files/script if needed
+> 
+> # Reports:
+> *
 > </details>
 
 ## 001-0010
@@ -254,42 +290,6 @@ gantt
 > - [x] 5. adding detail sub command to card
 > - [x] 6. Improve completion for card
 > - [x] 3. improve completion
-> 
-> # Reports:
-> *
-> </details>
-
-## 001-0007
-> **Improve installer to support add github action files.** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
-> <details >
->     <summary>Details</summary>
-> The goal of this card is to improve the installer to support install github action files.
-> 
-> # DOD (definition of done):
-> The installer has an option to install/copy guthub action files to repos
-> 
-> # TODO:
-> - [ ] 1.
-> 
-> # Reports:
-> *
-> </details>
-
-## 001-0009
-> **Improve git hooks** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
-> <details >
->     <summary>Details</summary>
-> The goal of this card is to improve Git hooks by separating the directives collector from the message formatter.
-> 
-> # DOD (definition of done):
-> Directives collector has its own script.
-> All hooks and scripts are updated to use the new Directives collector.
-> 
-> # TODO:
-> - [x] 1. Move Directives collector from commit-msg-format.shinc to a new shinc (commit-msg-directives.shinc)
-> - [x] 2. Update commit-msg-format.shinc and commit-msg to use commit-msg-directives.shinc
-> - [x] 3. Add this system to other hooks such as pre-commit
-> - [x] 4. Update other files/script if needed
 > 
 > # Reports:
 > *
