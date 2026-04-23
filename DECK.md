@@ -46,6 +46,7 @@ gantt
 > **Update and Enhance Git Hooks for Better Optimization and Readability.** ![status](https://img.shields.io/badge/status-DONE-brightgreen)
 > <details >
 >     <summary>Details</summary>
+> 
 > The goal of card to improve an optimize the current code for all git-deck parts.
 > 
 > # DOD (definition of done):
@@ -100,6 +101,7 @@ gantt
 > **Update git-deck-tools and clean up not used files.** ![status](https://img.shields.io/badge/status-DONE-brightgreen)
 > <details >
 >     <summary>Details</summary>
+> 
 > The goal of this card is to clean up scripts and YAML files,
 > 
 > # DOD (definition of done):
@@ -205,6 +207,7 @@ gantt
 > **Connect git-deck and git hooks message.** ![status](https://img.shields.io/badge/status-NOT--STARTED-lightgrey)
 > <details >
 >     <summary>Details</summary>
+> 
 > The goal of this card is to improve gut-deck integration with git.
 > 
 > # DOD (definition of done):
@@ -217,11 +220,11 @@ gantt
 > - [x] 1. Add check cards' ID to git message hooks
 > - [x] 2. Add option to skip commit message format
 > - [x] 3. Auto-complete for commit messages
-> - [ ] 4. Auto add git-deck changes
-> - [ ] 5. Add auto-tag
+> - [x] 4. Auto add git-deck changes
+> - [x] 5. Add auto-tag
 > - [x] 6. Add other items to header (creator, user, date, start-time, done-time...)
-> - [ ] 7. Auto time tracker
-> - [ ] 8. Plan to make it possible to use as Scrum board
+> - [x] 7. Auto time tracker
+> - [-] 8. Plan to make it possible to use as Scrum board
 > - [x] 9. Add a flag to enable/disable adding changeId
 > 
 > # Reports:
